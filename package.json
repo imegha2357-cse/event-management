@@ -1,0 +1,32 @@
+{
+  "name": "eventdesk",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "db:apply": "node scripts/apply-schema.mjs"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.16",
+    "@neondatabase/serverless": "1.2.1",
+    "@types/pg": "8.23.1",
+    "bcryptjs": "3.0.3",
+    "drizzle-orm": "0.45.4",
+    "next": "15.5.29",
+    "next-auth": "5.0.0-beta.32",
+    "pg": "8.23.1",
+    "react": "19.1.10",
+    "react-dom": "19.1.10",
+    "server-only": "^0.0.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "typescript": "5.8.3"
+  }
+}
