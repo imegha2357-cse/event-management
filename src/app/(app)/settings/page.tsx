@@ -13,6 +13,8 @@ import { googleEnabled } from '@/auth';
 import { emailConfigured } from '@/lib/email';
 import { retryNotificationAction } from '../actions';
 import { CompanyForm } from './company-form';
+import { demoLoaded } from '@/lib/demo';
+import { loadDemoAction, removeDemoAction } from './actions';
 
 export const metadata = { title: 'Settings' };
 
@@ -20,6 +22,7 @@ export default async function Settings() {
   const ctx = await requireUser();
   if (ctx.user.role !== 'Owner') return <NoAccess />;
   const { db, tenant } = ctx;
+  const hasDemo = await demoLoaded(ctx);
   const N = schema.notifications;
   const log = await db.select({ n: N, title: schema.bookings.title }).from(N).leftJoin(schema.bookings, eq(schema.bookings.id, N.bookingId))
     .where(eq(N.tenantId, tenant.id)).orderBy(desc(N.createdAt)).limit(50);
@@ -38,6 +41,11 @@ export default async function Settings() {
             </dl><p className="small muted" style={{ marginTop: 12 }}>These are set by the server administrator (environment variables on the hosting platform).</p></div>
           </div>
         </div>
+        <div className="panel" id="demo"><div className="panel-h"><div><h2>Demo data</h2><div className="small muted">Fill every list with 15 realistic sample entries to show clients how EventDesk works. Removing it deletes only the samples.</div></div></div>
+          <div className="panel-b" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {hasDemo ? <ActionButton action={removeDemoAction} fields={{}} label="Remove demo data" pendingText="Removing…" className="btn danger" confirm="Remove all demo entries? Your own data stays." />
+              : <ActionButton action={loadDemoAction} fields={{}} label="Add 15 demo entries to every list" pendingText="Adding… (about 20 seconds)" className="btn primary" />}
+          </div></div>
         <div className="panel" id="whatsapp"><div className="panel-h"><h2>WhatsApp message log</h2><span className="small muted">Failed messages are retried automatically once a day, up to 5 attempts.</span></div>
           {log.length === 0 ? <Empty title="No messages yet">A confirmation is sent when a customer accepts a quotation.</Empty> : (
             <div className="tablewrap"><table><thead><tr><th>When</th><th>Booking</th><th>To</th><th>Status</th><th className="num">Attempts</th><th>Error</th><th /></tr></thead><tbody>
