@@ -36,7 +36,10 @@ function EmployeeForm({ kind, setKind, leaders, onDone }: { kind: 'permanent' | 
           <button type="button" role="radio" aria-checked={kind === 'permanent'} className={kind === 'permanent' ? 'on' : ''} onClick={() => setKind('permanent')}>Permanent employee</button>
           <button type="button" role="radio" aria-checked={kind === 'helper'} className={kind === 'helper' ? 'on' : ''} onClick={() => setKind('helper')}>Helper boy</button>
         </div>
-        <Field label="Full name" htmlFor="emp-name" error={fe.name} required><input id="emp-name" name="name" className="input" autoComplete="off" /></Field>
+        <div className="grid2">
+          <Field label="Full name" htmlFor="emp-name" error={fe.name} required><input id="emp-name" name="name" className="input" autoComplete="off" /></Field>
+          <Field label="Role (optional)" htmlFor="emp-role"><input id="emp-role" name="role" className="input" list="emp-roles" placeholder="e.g. Cook" /><datalist id="emp-roles">{['Crew leader', 'Cook', 'Server', 'Decorator', 'Photographer', 'Driver', 'Coordinator', 'Makeup artist', 'Stage crew lead'].map(r => <option key={r} value={r} />)}</datalist></Field>
+        </div>
         <div className="grid2">
           <Field label="Phone number" htmlFor="emp-phone" error={fe.phone} required><input id="emp-phone" name="phone" className="input" inputMode="tel" placeholder="98765 43210" /></Field>
           <Field label="Daily wage (₹)" htmlFor="emp-wage" error={fe.dailyWage} required><input id="emp-wage" name="dailyWage" type="number" min={1} className="input" /></Field>
@@ -55,20 +58,20 @@ function EmployeeForm({ kind, setKind, leaders, onDone }: { kind: 'permanent' | 
   );
 }
 
-export function PayButton({ staffId, name, balance, today }: { staffId: string; name: string; balance: number; today: string }) {
+export function PayButton({ staffId, name, balance, today, events = [] }: { staffId: string; name: string; balance: number; today: string; events?: [string, string][] }) {
   const d = useDialog();
   const [formKey, setFormKey] = useState(0);
   return (
     <>
       <button type="button" className="btn sm" onClick={() => { setFormKey(k => k + 1); d.open(); }}>Pay</button>
       <dialog ref={d.ref} aria-label={`Record payment to ${name}`}>
-        <PayForm key={formKey} staffId={staffId} name={name} balance={balance} today={today} onDone={d.close} />
+        <PayForm key={formKey} staffId={staffId} name={name} balance={balance} today={today} events={events} onDone={d.close} />
       </dialog>
     </>
   );
 }
 
-function PayForm({ staffId, name, balance, today, onDone }: { staffId: string; name: string; balance: number; today: string; onDone: () => void }) {
+function PayForm({ staffId, name, balance, today, events, onDone }: { staffId: string; name: string; balance: number; today: string; events: [string, string][]; onDone: () => void }) {
   const { state, action, onSubmit, pending } = useFormAction(recordStaffPaymentAction);
   const fe = state?.fieldErrors ?? {};
   useEffect(() => { if (state?.ok) { const t = setTimeout(onDone, 900); return () => clearTimeout(t); } }, [state, onDone]);
@@ -83,6 +86,7 @@ function PayForm({ staffId, name, balance, today, onDone }: { staffId: string; n
           <Field label="Amount (₹)" htmlFor={`amt-${staffId}`} error={fe.amount} required><input id={`amt-${staffId}`} name="amount" type="number" min={1} className="input" defaultValue={balance > 0 ? balance : ''} /></Field>
           <Field label="Paid on" htmlFor={`on-${staffId}`} error={fe.paidOn} required><input id={`on-${staffId}`} name="paidOn" type="date" max={today} className="input" defaultValue={today} /></Field>
         </div>
+        {events.length > 0 && <Field label="For which event? (adds it to that event’s expenses)" htmlFor={`ev-${staffId}`}><select id={`ev-${staffId}`} name="bookingId" className="input" defaultValue=""><option value="">— Not linked to an event —</option>{events.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>}
         <Field label="Note" htmlFor={`note-${staffId}`} error={fe.note}><input id={`note-${staffId}`} name="note" className="input" placeholder="e.g. Cash, UPI" /></Field>
       </div>
       <div className="formfoot" style={{ justifyContent: 'flex-end' }}>

@@ -2,9 +2,10 @@
 import Link from 'next/link';
 import { Field, FormMessage, SubmitButton, useFormAction } from '@/components/ui';
 import { createCustomerAction, updateCustomerAction } from '../actions';
+import { CustomFieldInputs } from '../bookings/form';
 
-type C = { id: string; name: string; phone: string; email: string; city: string };
-export function CustomerForm({ customer, returnTo }: { customer?: C; returnTo?: string }) {
+type C = { id: string; name: string; phone: string; email: string; city: string; custom?: Record<string, string> };
+export function CustomerForm({ customer, returnTo, fields = [] }: { customer?: C; returnTo?: string; fields?: { id: string; label: string; type: string; options?: string[] }[] }) {
   const { state, action, onSubmit, pending } = useFormAction(customer ? updateCustomerAction : createCustomerAction);
   const fe = state?.fieldErrors ?? {};
   return (
@@ -20,6 +21,7 @@ export function CustomerForm({ customer, returnTo }: { customer?: C; returnTo?: 
           <Field label="Email" htmlFor="email" error={fe.email}><input id="email" name="email" type="email" className="input" defaultValue={customer?.email} aria-invalid={!!fe.email || undefined} /></Field>
           <Field label="City" htmlFor="city" error={fe.city}><input id="city" name="city" className="input" defaultValue={customer?.city} /></Field>
         </div>
+        <CustomFieldInputs fields={fields} values={customer?.custom} />
       </div>
       <div className="formfoot">
         <SubmitButton pending={pending} pendingText="Saving…">{customer ? 'Save changes' : 'Save customer'}</SubmitButton>

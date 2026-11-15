@@ -52,7 +52,7 @@ export async function signupAction(_: ActionState, fd: FormData): Promise<Action
   const tenantId = newId();
   await db.insert(schema.tenants).values({ id: tenantId, name: parsed.data.company });
   try {
-    await db.insert(schema.users).values({ id: newId(), tenantId, name: parsed.data.name, email: parsed.data.email, passwordHash: await bcrypt.hash(parsed.data.password, 12), role: 'owner' });
+    await db.insert(schema.users).values({ id: newId(), tenantId, name: parsed.data.name, email: parsed.data.email, passwordHash: await bcrypt.hash(parsed.data.password, 12), role: 'Owner' });
   } catch {
     await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
     return { fieldErrors: { email: 'An account with this email already exists. Sign in instead.' } };

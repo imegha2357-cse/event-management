@@ -1,19 +1,29 @@
+import { Fragment } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { schema } from '@/db';
-import { requireUser } from '@/lib/session';
+import { requireUser, gate } from '@/lib/session';
+import { Gate } from '@/components/locked';
+import { AutoSelect } from '@/components/auto-select';
+import { quoteLabel } from '@/lib/docs';
+import { has, isEnt, perk } from '@/lib/plans';
+import { BASE_STATUSES, SVC } from '@/lib/catalog';
+import { moneyByBooking, moneyStatus } from '@/lib/money';
+import { setBookingStatusAction, deleteBookingAction } from '../actions';
 import { PageHead, Badge, Empty } from '@/components/page';
 import { ActionButton } from '@/components/action-form';
-import { fmtDate, fmtDateTime, fmtTime, inr, bookingNo, quoteNo } from '@/lib/util';
+import { fmtDate, fmtDateTime, fmtTime, inr, bookingNo, waNumber } from '@/lib/util';
 import { MAX_ATTEMPTS, whatsappConfigured } from '@/lib/whatsapp';
-import { bookingStatusAction, removeCrewAction, retryNotificationAction, togglePresentAction } from '../../actions';
+import { removeCrewAction, retryNotificationAction, togglePresentAction } from '../../actions';
 import { AssignCrewForm, CrewNeededForm, FixPhoneForm } from './crew';
 
-export default async function BookingPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string }> }) {
+export default async function BookingPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; saved?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
-  const { db, tenant } = await requireUser();
+  const ctx = await requireUser();
+  const g = gate(ctx, 'events'); if (g) return <Gate g={g} plan={ctx.plan} />;
+  const { db, tenant, custom } = ctx;
   const [b] = await db.select().from(schema.bookings).where(and(eq(schema.bookings.id, id), eq(schema.bookings.tenantId, tenant.id))).limit(1);
   if (!b) notFound();
   const [customer] = await db.select().from(schema.customers).where(eq(schema.customers.id, b.customerId)).limit(1);
@@ -28,6 +38,14 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
     id: s.id, group: s.kind === 'permanent' ? 'Permanent employees' : 'Helper boys',
     label: s.kind === 'permanent' ? `${s.name} (+${allStaff.filter(h => h.leaderId === s.id).length} helpers)` : `${s.name} · brought by ${leaders.find(l => l.id === s.leaderId)?.name ?? '—'}`,
   }));
+  const invs = await db.select().from(schema.invoices).where(eq(schema.invoices.bookingId, b.id));
+  const exps = await db.select().from(schema.expenses).where(eq(schema.expenses.bookingId, b.id)).orderBy(desc(schema.expenses.spentOn));
+  const m = (await moneyByBooking(ctx, [b.id])).get(b.id)!;
+  const ent = isEnt(tenant);
+  const statuses = [...BASE_STATUSES, ...(ent ? custom.statuses ?? [] : [])];
+  const branch = ent ? (custom.branches ?? []).find(x => x.id === b.branchId) : undefined;
+  const showCrew = has(tenant, 'staff');
+  const showFinance = has(tenant, 'payments');
   const present = crew.filter(x => x.c.present).length;
   const wages = crew.filter(x => x.c.present).reduce((a, x) => a + x.c.wage, 0);
 
@@ -35,12 +53,14 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
     <>
       <PageHead title={b.title} badge={<Badge s={b.status} />} sub={<>{bookingNo(b.number)} · {customer.name} · {fmtDate(b.eventDate)}</>}
         actions={<>
-          {b.status === 'Confirmed' && <ActionButton action={bookingStatusAction} fields={{ rid: b.id, status: 'Completed' }} label="Mark completed" />}
-          {b.status === 'Confirmed' && <ActionButton action={bookingStatusAction} fields={{ rid: b.id, status: 'Cancelled' }} label="Cancel booking" className="btn danger" confirm="Cancel this booking? The customer is not notified automatically." />}
-          {b.status !== 'Confirmed' && <ActionButton action={bookingStatusAction} fields={{ rid: b.id, status: 'Confirmed' }} label="Reopen booking" />}
+          <AutoSelect action={setBookingStatusAction} fields={{ rid: b.id }} name="status" value={b.status} options={statuses} label="Booking status" />
+          {!b.quotationId && <Link className="btn" href={`/quotations/new?booking=${b.id}`}>Make quotation</Link>}
+          {invs[0] ? <Link className="btn" href={`/invoices/${invs[0].id}`}>Invoice {invs[0].docNo}</Link> : <Link className="btn primary" href={`/invoices/new?booking=${b.id}`}>Create invoice</Link>}
+          {!b.quotationId && !invs.length && <ActionButton action={deleteBookingAction} fields={{ rid: b.id }} label="Delete" className="btn danger" confirm="Delete this event? This cannot be undone." />}
         </>} />
       <div className="body">
         {sp.new && <div className="formok">Booking created from the accepted quotation.</div>}
+        {sp.saved && <div className="formok">Saved.</div>}
         <div className="split">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div className="panel"><div className="panel-h"><h2>Event details</h2></div>
@@ -50,12 +70,33 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
                 <dt>Date & time</dt><dd>{fmtDate(b.eventDate)}{b.startTime && ` · ${fmtTime(b.startTime)}${b.endTime ? '–' + fmtTime(b.endTime) : ''}`}</dd>
                 <dt>Venue</dt><dd>{b.venue}</dd>
                 <dt>Guests</dt><dd>{b.guests || '—'}</dd>
-                <dt>Amount</dt><dd><b>{inr(b.total)}</b></dd>
-                {quote && <><dt>Quotation</dt><dd><Link href={`/quotations/${quote.id}`}>{quoteNo(quote.number)}</Link> · accepted {fmtDateTime(quote.decidedAt)}</dd></>}
+                {b.setupTime && <><dt>Setup from</dt><dd>{fmtTime(b.setupTime)}</dd></>}
+                {(b.services ?? []).length > 0 && <><dt>Services</dt><dd><div className="chips">{b.services.map(k => <span key={k} className="chip">{SVC[k]?.name ?? k}</span>)}</div></dd></>}
+                {branch && <><dt>Branch</dt><dd>{branch.name}</dd></>}
+                {ent && (custom.eventFields ?? []).filter(f => b.custom?.[f.id]).map(f => <Fragment key={f.id}><dt>{f.label}</dt><dd>{b.custom[f.id]}</dd></Fragment>)}
+                <dt>Amount</dt><dd><b>{b.total ? inr(b.total) : '—'}</b></dd>
+                {quote && <><dt>Quotation</dt><dd><Link href={`/quotations/${quote.id}`}>{quoteLabel(tenant, quote.number)}</Link> · accepted {fmtDateTime(quote.decidedAt)}</dd></>}
                 {b.notes && <><dt>Notes</dt><dd style={{ whiteSpace: 'pre-line' }}>{b.notes}</dd></>}
               </dl></div>
             </div>
-            <div className="panel">
+            <div className="panel"><div className="panel-h"><h2>Money</h2><span className={`badge ${moneyStatus(m)}`}>{moneyStatus(m)}</span></div>
+              <div className="panel-b"><div className="grid4">
+                <div><div className="small muted">Quote / invoiced</div><b>{inr(m.quote)}</b></div><div><div className="small muted">Received</div><b>{inr(m.received)}</b></div>
+                <div><div className="small muted">Spent</div><b>{inr(m.spent)}</b></div><div><div className="small muted">Profit so far</div><b>{inr(m.profit)}</b></div>
+              </div>
+              <div className="bar" style={{ marginTop: 10 }}><i style={{ width: `${m.quote ? Math.min(100, (m.received / m.quote) * 100) : 0}%` }} /></div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                {showFinance && m.invoiceId && m.pending > 0 && <Link className="btn primary sm" href={`/finance/payment?invoice=${m.invoiceId}`}>Record payment</Link>}
+                {showFinance && <Link className="btn sm" href={`/finance/expense?booking=${b.id}`}>Add expense</Link>}
+                {showFinance && m.pending > 0 && perk(tenant, 'whatsappShare') && customer.phone && <a className="btn sm good" target="_blank" rel="noopener noreferrer"
+                  href={`https://wa.me/${waNumber(customer.phone)}?text=${encodeURIComponent(`Vanakkam ${customer.name}, a gentle reminder from ${tenant.name}: ${inr(m.pending)} is pending for ${b.title} on ${fmtDate(b.eventDate)}. Thank you!`)}`}>Send WhatsApp reminder</a>}
+                {!showFinance && <span className="small muted">Payments, expenses and profit tracking come with the Pro plan.</span>}
+              </div></div>
+              {exps.length > 0 && <table><thead><tr><th>Expense</th><th>Category</th><th>Date</th><th className="num">Amount</th></tr></thead><tbody>
+                {exps.map(x => <tr key={x.id}><td>{x.item}{x.bill && <span className="chip" style={{ marginLeft: 6 }}>Bill photo</span>}<div className="small muted">{x.paidTo}</div></td><td>{x.category}</td><td className="nowrap">{fmtDate(x.spentOn)}</td><td className="num">{inr(x.amount)}</td></tr>)}
+              </tbody></table>}
+            </div>
+            {showCrew && <div className="panel">
               <div className="panel-h"><div><h2>Crew</h2><div className="small muted">{crew.length} assigned · {present} present · wages due {inr(wages)}</div></div><CrewNeededForm bookingId={b.id} value={b.crewNeeded} /></div>
               <div className="panel-b" style={{ borderBottom: '1px solid var(--line)' }}>
                 <div className="meter" role="img" aria-label={`${crew.length} of ${b.crewNeeded} crew assigned, ${present} present`}>
@@ -73,7 +114,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
                       <td className="num"><ActionButton action={removeCrewAction} fields={{ rid: c.id }} className="btn sm danger" label="Remove" /></td></tr>))}
                 </tbody></table>)}
               {b.status !== 'Cancelled' && <div className="panel-b" style={{ borderTop: '1px solid var(--line)' }}><AssignCrewForm bookingId={b.id} options={options} /></div>}
-            </div>
+            </div>}
           </div>
           <div className="panel" id="whatsapp"><div className="panel-h"><h2>WhatsApp confirmation</h2></div>
             <div className="panel-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

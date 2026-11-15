@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { schema } from '@/db';
-import { requireUser } from '@/lib/session';
+import { requireUser, gate } from '@/lib/session';
+import { Gate } from '@/components/locked';
+import { quoteLabel } from '@/lib/docs';
 import { PageHead, Badge, Empty } from '@/components/page';
-import { fmtDate, inr, quoteNo } from '@/lib/util';
+import { fmtDate, inr } from '@/lib/util';
 
 export const metadata = { title: 'Quotations' };
 const FILTERS = ['All', 'Draft', 'Sent', 'Accepted', 'Declined'];
@@ -11,7 +13,9 @@ const FILTERS = ['All', 'Draft', 'Sent', 'Accepted', 'Declined'];
 export default async function Quotations({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const sp = await searchParams;
   const status = FILTERS.includes(sp.status ?? '') ? sp.status! : 'All';
-  const { db, tenant } = await requireUser();
+  const ctx = await requireUser();
+  const g = gate(ctx, 'quotations'); if (g) return <Gate g={g} plan={ctx.plan} />;
+  const { db, tenant } = ctx;
   const Q = schema.quotations, C = schema.customers;
   const counts = await db.select({ s: Q.status, n: sql<number>`count(*)::int` }).from(Q).where(eq(Q.tenantId, tenant.id)).groupBy(Q.status);
   const count = (s: string) => s === 'All' ? counts.reduce((a, c) => a + c.n, 0) : (counts.find(c => c.s === s)?.n ?? 0);
@@ -28,7 +32,7 @@ export default async function Quotations({ searchParams }: { searchParams: Promi
           {rows.length === 0 ? <Empty title={status === 'All' ? 'No quotations yet' : `No ${status.toLowerCase()} quotations`}>{status === 'All' && <Link href="/quotations/new">Create your first quotation</Link>}</Empty> : (
             <div className="tablewrap"><table><thead><tr><th>Number</th><th>Customer</th><th>Event</th><th>Event date</th><th>Valid until</th><th>Status</th><th className="num">Amount</th></tr></thead><tbody>
               {rows.map(({ q, customer }) => (
-                <tr key={q.id}><td><Link className="strong" href={`/quotations/${q.id}`}>{quoteNo(q.number)}</Link></td><td>{customer}</td>
+                <tr key={q.id}><td><Link className="strong" href={`/quotations/${q.id}`}>{quoteLabel(tenant, q.number)}</Link></td><td>{customer}</td>
                   <td>{q.eventTitle}<div className="small muted">{q.eventType}</div></td><td className="nowrap">{fmtDate(q.eventDate)}</td><td className="nowrap">{fmtDate(q.validUntil)}</td>
                   <td><Badge s={q.status} /></td><td className="num">{inr(q.total)}</td></tr>))}
             </tbody></table></div>)}

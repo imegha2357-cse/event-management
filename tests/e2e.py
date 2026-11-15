@@ -31,7 +31,7 @@ with sync_playwright() as p:
     br = p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
     ctx = br.new_context(viewport={"width": 1366, "height": 900})
     page = ctx.new_page()
-    page.on("console", lambda m: console_errors.append(m.text) if m.type == "error" else None)
+    page.on("console", lambda m: console_errors.append(page.url + " :: " + m.text[:120]) if m.type == "error" else None)
     page.on("pageerror", lambda e: console_errors.append(str(e)))
     NET = []
     def _body(r):
@@ -74,6 +74,8 @@ with sync_playwright() as p:
     page.fill("#phone", "9876500000"); page.fill("#city", "Chennai"); page.click("button:has-text('Save')")
     page.wait_for_selector("text=Company details saved.")
     check("settings save", True)
+    import subprocess
+    subprocess.run(["psql", "-h", "localhost", "-p", "5433", "-U", "postgres", "-d", "eventdesk", "-c", f"update tenants set plan='pro' where id=(select tenant_id from users where email='{email}')"], capture_output=True)
     # password toggle
     # --- Customer ---
     go(page, BASE + "/customers/new")
@@ -94,19 +96,19 @@ with sync_playwright() as p:
         page.select_option("#eventType", "Wedding"); page.fill("#eventTitle", title); page.fill("#eventDate", future)
         page.fill("#startTime", "10:00"); page.fill("#endTime", "16:00"); page.fill("#guests", "200"); page.fill("#venue", "Sree Mahal, Salem")
         page.fill("input[aria-label='Item 1 description']", "Stage decoration"); page.fill("input[aria-label='Item 1 rate']", "45000")
-        page.select_option("select[aria-label='Add a common item']", index=1)  # veg meals per plate -> qty = guests
+        page.select_option("select[aria-label='Add one of your services']", "catering")  # 450 per plate -> qty = guests
         page.fill("#discount", "5000")
-        page.click("button:has-text('Save as draft')")
+        page.click("button:has-text('Save quotation')")
         wait_url(page, re.compile(r"/quotations/[0-9a-f-]{36}\?created=1"), timeout=20000)
         return page.url.split("/quotations/")[1].split("?")[0]
 
     # quote validation
-    go(page, BASE + "/quotations/new"); page.click("button:has-text('Save as draft')")
+    go(page, BASE + "/quotations/new"); page.click("button:has-text('Save quotation')")
     page.wait_for_selector("text=Please correct the highlighted fields.")
     check("quote validation", page.locator("text=Choose a customer.").is_visible())
     qid = make_quote("Priya & Arun wedding")
     body = page.inner_text("main, body")
-    check("quote totals (45000 + 200*350 - 5000 = 110000)", "₹1,10,000" in body)
+    check("quote totals (45000 + 200*450 - 5000 = 130000)", "₹1,30,000" in body)
     check("quote is Draft", page.locator(".pagehead .badge").inner_text().strip().upper() == "DRAFT")
     link = page.input_value("input[aria-label='Customer review link']")
     wa = page.get_attribute("a:has-text('Share on WhatsApp')", "href")

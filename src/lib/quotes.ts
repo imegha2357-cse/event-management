@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, eq, inArray, max } from 'drizzle-orm';
+import { and, eq, inArray, isNull, max } from 'drizzle-orm';
 import { getDb, schema } from '@/db';
 import { newId, bookingNo } from '@/lib/util';
 import { queueBookingConfirmation } from '@/lib/whatsapp';
@@ -33,6 +33,14 @@ export async function ensureBookingForQuote(q: typeof schema.quotations.$inferSe
   const db = await getDb();
   const [existing] = await db.select().from(schema.bookings).where(eq(schema.bookings.quotationId, q.id)).limit(1);
   if (existing) return { booking: existing, created: false };
+  if (q.bookingId) {
+    // The quotation was made for an existing enquiry: confirm that event instead of creating another one.
+    const [linked] = await db.update(schema.bookings).set({
+      quotationId: q.id, status: 'Confirmed', items: q.items, total: q.total, title: q.eventTitle, eventType: q.eventType, eventDate: q.eventDate,
+      startTime: q.startTime, endTime: q.endTime, venue: q.venue, guests: q.guests,
+    }).where(and(eq(schema.bookings.id, q.bookingId), eq(schema.bookings.tenantId, q.tenantId), isNull(schema.bookings.quotationId))).returning();
+    if (linked) return { booking: linked, created: true };
+  }
   for (let attempt = 0; attempt < 4; attempt++) {
     const number = await nextNumber(schema.bookings, q.tenantId);
     try {

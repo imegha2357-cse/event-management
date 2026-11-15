@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { and, asc, desc, eq, ne, sql } from 'drizzle-orm';
 import { schema } from '@/db';
-import { requireUser } from '@/lib/session';
+import { requireUser, gate } from '@/lib/session';
+import { Gate } from '@/components/locked';
 import { PageHead, Badge, Empty } from '@/components/page';
 import { ActionButton } from '@/components/action-form';
 import { fmtDate, inr, todayIST } from '@/lib/util';
@@ -18,7 +19,9 @@ function payStatus(due: number, paid: number) {
 }
 
 export default async function Staff() {
-  const { db, tenant } = await requireUser();
+  const ctx = await requireUser();
+  const g = gate(ctx, 'staff'); if (g) return <Gate g={g} plan={ctx.plan} />;
+  const { db, tenant } = ctx;
   const today = todayIST();
   const S = schema.staff, BC = schema.bookingCrew, B = schema.bookings, P = schema.staffPayments;
   const people = await db.select().from(S).where(eq(S.tenantId, tenant.id)).orderBy(asc(S.name));
@@ -29,6 +32,8 @@ export default async function Staff() {
     .where(and(eq(BC.tenantId, tenant.id), eq(B.eventDate, today), ne(B.status, 'Cancelled')));
   const payments = await db.select({ p: P, name: S.name }).from(P).innerJoin(S, eq(S.id, P.staffId)).where(eq(P.tenantId, tenant.id)).orderBy(desc(P.paidOn), desc(P.createdAt)).limit(15);
 
+  const evList = await db.select({ id: B.id, title: B.title, date: B.eventDate }).from(B).where(and(eq(B.tenantId, tenant.id), ne(B.status, 'Cancelled'))).orderBy(desc(B.eventDate)).limit(60);
+  const evOpts = evList.map(e => [e.id, `${e.title} · ${fmtDate(e.date)}`] as [string, string]);
   const rows: Row[] = people.map(p => {
     const t = todays.find(x => x.staffId === p.id);
     return { ...p, due: work.find(w => w.staffId === p.id)?.due ?? 0, days: work.find(w => w.staffId === p.id)?.days ?? 0, paid: paid.find(x => x.staffId === p.id)?.paid ?? 0, todayCrewId: t?.id, todayPresent: t?.present };
@@ -74,10 +79,10 @@ export default async function Staff() {
                     <thead><tr><th>Name</th><th>Phone</th><th>Attendance today</th><th className="num">Days</th><th className="num">Due</th><th className="num">Paid</th><th className="num">Balance</th><th>Status</th><th /></tr></thead>
                     <tbody>{team.map(m => (
                       <tr key={m.id}>
-                        <td>{m.name}{m.id === leader.id ? <span className="tag">Team leader</span> : <span className="tag">Helper</span>}<div className="small muted">₹{m.dailyWage.toLocaleString('en-IN')}/day</div></td>
+                        <td>{m.name}{m.id === leader.id ? <span className="tag">Team leader</span> : <span className="tag">Helper</span>}{m.role && <span className="tag">{m.role}</span>}<div className="small muted">₹{m.dailyWage.toLocaleString('en-IN')}/day</div></td>
                         <td className="nowrap">{m.phone}</td><td>{attendance(m)}</td><td className="num">{m.days}</td>
                         <td className="num">{inr(m.due)}</td><td className="num">{inr(m.paid)}</td><td className="num">{inr(Math.max(m.due - m.paid, 0))}</td>
-                        <td>{payStatus(m.due, m.paid)}</td><td className="num"><PayButton staffId={m.id} name={m.name} balance={Math.max(m.due - m.paid, 0)} today={today} /></td>
+                        <td>{payStatus(m.due, m.paid)}</td><td className="num"><PayButton staffId={m.id} name={m.name} balance={Math.max(m.due - m.paid, 0)} today={today} events={evOpts} /></td>
                       </tr>))}
                     </tbody></table></div>
                     {helpers.length === 0 && <p className="small muted" style={{ marginTop: 8 }}>No helper boys yet. Use “Add employee” → Helper boy and choose {leader.name} under “Brought by”.</p>}

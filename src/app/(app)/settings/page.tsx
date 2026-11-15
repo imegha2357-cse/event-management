@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { desc, eq } from 'drizzle-orm';
 import { schema } from '@/db';
 import { requireUser } from '@/lib/session';
+import { NoAccess } from '@/components/locked';
+import { perk } from '@/lib/plans';
+import { DOC_STYLES, SWATCHES } from '@/lib/catalog';
 import { PageHead, Badge, Empty } from '@/components/page';
 import { ActionButton } from '@/components/action-form';
 import { fmtDateTime } from '@/lib/util';
@@ -14,17 +17,19 @@ import { CompanyForm } from './company-form';
 export const metadata = { title: 'Settings' };
 
 export default async function Settings() {
-  const { db, tenant } = await requireUser();
+  const ctx = await requireUser();
+  if (ctx.user.role !== 'Owner') return <NoAccess />;
+  const { db, tenant } = ctx;
   const N = schema.notifications;
   const log = await db.select({ n: N, title: schema.bookings.title }).from(N).leftJoin(schema.bookings, eq(schema.bookings.id, N.bookingId))
     .where(eq(N.tenantId, tenant.id)).orderBy(desc(N.createdAt)).limit(50);
   const conn = (ok: boolean) => ok ? <Badge s="good" label="Connected" /> : <Badge s="warn" label="Not set up" />;
   return (
     <>
-      <PageHead title="Settings" />
+      <PageHead title="Company settings" sub="These details print on every quotation and invoice." />
       <div className="body">
         <div className="split">
-          <div className="panel"><div className="panel-h"><h2>Company details</h2></div><CompanyForm t={{ name: tenant.name, phone: tenant.phone, city: tenant.city, address: tenant.address, gstin: tenant.gstin }} /></div>
+          <div className="panel"><div className="panel-h"><h2>Company details</h2></div><CompanyForm t={{ name: tenant.name, phone: tenant.phone, city: tenant.city, address: tenant.address, gstin: tenant.gstin, colour: tenant.colour, logo: tenant.logo, docStyle: tenant.docStyle, terms: tenant.terms }} swatches={SWATCHES} styles={DOC_STYLES} designs={perk(tenant, 'docDesigns')} anyColour={perk(tenant, 'anyColour')} /></div>
           <div className="panel"><div className="panel-h"><h2>Connections</h2></div>
             <div className="panel-b"><dl className="dl" style={{ gridTemplateColumns: '1fr auto' }}>
               <dt>WhatsApp Business</dt><dd>{conn(whatsappConfigured())}</dd>

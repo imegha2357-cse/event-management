@@ -156,3 +156,141 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 CREATE INDEX IF NOT EXISTS notifications_status_idx ON notifications(status, attempts);
 CREATE INDEX IF NOT EXISTS notifications_tenant_idx ON notifications(tenant_id, created_at);
+
+-- ===================== Plans, roles, finance, tools (v2) =====================
+-- All statements are additive and safe to run again.
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'basic';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'Active';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS colour text NOT NULL DEFAULT '#2266d6';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS logo text NOT NULL DEFAULT '';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS doc_style text NOT NULL DEFAULT 'classic';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS terms text NOT NULL DEFAULT '';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS services jsonb NOT NULL DEFAULT '{}';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS custom jsonb NOT NULL DEFAULT '{}';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS plan_changed_at timestamptz;
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone text NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS active boolean NOT NULL DEFAULT true;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS platform_admin boolean NOT NULL DEFAULT false;
+UPDATE users SET role = 'Owner' WHERE role = 'owner';
+
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS custom jsonb NOT NULL DEFAULT '{}';
+
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS booking_id text;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS gst boolean NOT NULL DEFAULT false;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS gst_rate integer NOT NULL DEFAULT 18;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS tax integer NOT NULL DEFAULT 0;
+
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS setup_time text NOT NULL DEFAULT '';
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS services jsonb NOT NULL DEFAULT '[]';
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS branch_id text;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS custom jsonb NOT NULL DEFAULT '{}';
+
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT '';
+ALTER TABLE staff_payments ADD COLUMN IF NOT EXISTS booking_id text;
+ALTER TABLE staff_payments ADD COLUMN IF NOT EXISTS expense_id text;
+
+CREATE TABLE IF NOT EXISTS upgrade_requests (
+  id text PRIMARY KEY,
+  tenant_id text NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  plan text NOT NULL,
+  note text NOT NULL DEFAULT '',
+  status text NOT NULL DEFAULT 'Pending',
+  requested_by text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  decided_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS upgrade_requests_status_idx ON upgrade_requests(status, created_at);
+
+CREATE TABLE IF NOT EXISTS invoices (
+  id text PRIMARY KEY,
+  tenant_id text NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  fy text NOT NULL,
+  number integer NOT NULL,
+  doc_no text NOT NULL,
+  booking_id text REFERENCES bookings(id) ON DELETE SET NULL,
+  quotation_id text UNIQUE REFERENCES quotations(id) ON DELETE SET NULL,
+  customer_id text NOT NULL REFERENCES customers(id),
+  issued_on date NOT NULL,
+  items jsonb NOT NULL DEFAULT '[]',
+  discount integer NOT NULL DEFAULT 0,
+  gst boolean NOT NULL DEFAULT false,
+  gst_rate integer NOT NULL DEFAULT 18,
+  subtotal integer NOT NULL DEFAULT 0,
+  tax integer NOT NULL DEFAULT 0,
+  total integer NOT NULL DEFAULT 0,
+  notes text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (tenant_id, fy, number)
+);
+CREATE INDEX IF NOT EXISTS invoices_tenant_idx ON invoices(tenant_id, issued_on);
+CREATE INDEX IF NOT EXISTS invoices_booking_idx ON invoices(booking_id);
+
+CREATE TABLE IF NOT EXISTS invoice_payments (
+  id text PRIMARY KEY,
+  tenant_id text NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  invoice_id text NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  amount integer NOT NULL CHECK (amount > 0),
+  kind text NOT NULL DEFAULT 'Payment',
+  mode text NOT NULL DEFAULT 'UPI',
+  paid_on date NOT NULL,
+  reference text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS invoice_payments_inv_idx ON invoice_payments(invoice_id);
+CREATE INDEX IF NOT EXISTS invoice_payments_tenant_idx ON invoice_payments(tenant_id, paid_on);
+
+CREATE TABLE IF NOT EXISTS vendors (
+  id text PRIMARY KEY,
+  tenant_id text NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  category text NOT NULL DEFAULT '',
+  phone text NOT NULL DEFAULT '',
+  notes text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS vendors_tenant_idx ON vendors(tenant_id);
+
+CREATE TABLE IF NOT EXISTS expenses (
+  id text PRIMARY KEY,
+  tenant_id text NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  booking_id text REFERENCES bookings(id) ON DELETE SET NULL,
+  category text NOT NULL DEFAULT 'Other',
+  item text NOT NULL,
+  amount integer NOT NULL CHECK (amount > 0),
+  spent_on date NOT NULL,
+  paid_to text NOT NULL DEFAULT '',
+  vendor_id text REFERENCES vendors(id) ON DELETE SET NULL,
+  mode text NOT NULL DEFAULT 'UPI',
+  bill text NOT NULL DEFAULT '',
+  source text NOT NULL DEFAULT 'manual',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS expenses_tenant_idx ON expenses(tenant_id, spent_on);
+CREATE INDEX IF NOT EXISTS expenses_booking_idx ON expenses(booking_id);
+
+CREATE TABLE IF NOT EXISTS activity_log (
+  id text PRIMARY KEY,
+  tenant_id text NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  who text NOT NULL,
+  what text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS activity_log_tenant_idx ON activity_log(tenant_id, created_at);
+
+CREATE TABLE IF NOT EXISTS tool_rows (
+  id text PRIMARY KEY,
+  tenant_id text NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  tool text NOT NULL,
+  coll text NOT NULL,
+  booking_id text REFERENCES bookings(id) ON DELETE CASCADE,
+  data jsonb NOT NULL DEFAULT '{}',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS tool_rows_idx ON tool_rows(tenant_id, tool, coll);
+
+CREATE TABLE IF NOT EXISTS tool_seeded (
+  tenant_id text NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  tool text NOT NULL,
+  PRIMARY KEY (tenant_id, tool)
+)

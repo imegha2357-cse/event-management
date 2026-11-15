@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { and, asc, eq, gte, lte, ne } from 'drizzle-orm';
 import { schema } from '@/db';
-import { requireUser } from '@/lib/session';
+import { requireUser, gate } from '@/lib/session';
+import { Gate } from '@/components/locked';
 import { PageHead } from '@/components/page';
 import { fmtTime, todayIST } from '@/lib/util';
 
@@ -17,7 +18,9 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
   const startOffset = (first.getUTCDay() + 6) % 7; // weeks start on Monday
   const gridStart = iso(y, m - 1, 1 - startOffset);
   const gridEnd = iso(y, m - 1, 1 - startOffset + 41);
-  const { db, tenant } = await requireUser();
+  const ctx = await requireUser();
+  const g = gate(ctx, 'calendar'); if (g) return <Gate g={g} plan={ctx.plan} />;
+  const { db, tenant } = ctx;
   const B = schema.bookings;
   const events = await db.select().from(B).where(and(eq(B.tenantId, tenant.id), ne(B.status, 'Cancelled'), gte(B.eventDate, gridStart), lte(B.eventDate, gridEnd))).orderBy(asc(B.eventDate), asc(B.startTime));
   const prev = iso(y, m - 2, 1).slice(0, 7), next = iso(y, m, 1).slice(0, 7);
@@ -25,7 +28,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
   const monthCount = events.filter(e => e.eventDate.slice(0, 7) === `${y}-${String(m).padStart(2, '0')}`).length;
   return (
     <>
-      <PageHead title={`${MONTHS[m - 1]} ${y}`} sub={`${monthCount} event${monthCount === 1 ? '' : 's'} this month`}
+      <PageHead title={`${MONTHS[m - 1]} ${y}`} sub={`${monthCount} event${monthCount === 1 ? '' : 's'} this month · confirmed in your colour, enquiries in amber`}
         actions={<><Link className="btn" href={`/calendar?m=${prev}`} aria-label="Previous month">‹</Link><Link className="btn" href="/calendar">Today</Link><Link className="btn" href={`/calendar?m=${next}`} aria-label="Next month">›</Link></>} />
       <div className="body">
         <div className="cal">
@@ -33,7 +36,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
           {days.map(d => (
             <div key={d} className={(d.slice(5, 7) !== String(m).padStart(2, '0') ? 'out ' : '') + (d === today ? 'today' : '')}>
               <span className="d">{Number(d.slice(8))}</span>
-              {events.filter(e => e.eventDate === d).map(e => <Link key={e.id} className="ev" href={`/bookings/${e.id}`} title={e.title}>{e.startTime ? fmtTime(e.startTime) + ' ' : ''}{e.title}</Link>)}
+              {events.filter(e => e.eventDate === d).map(e => <Link key={e.id} className={'ev' + (e.status === 'Enquiry' ? ' enq' : '')} href={`/bookings/${e.id}`} title={e.title}>{e.startTime ? fmtTime(e.startTime) + ' ' : ''}{e.title}</Link>)}
             </div>))}
         </div>
       </div>

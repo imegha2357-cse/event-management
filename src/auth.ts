@@ -28,9 +28,9 @@ async function resolveGoogleUser(sub: string, email: string, name: string) {
   }
   const tenantId = newId();
   await db.insert(schema.tenants).values({ id: tenantId, name: '' });
-  const user = { id: newId(), tenantId, name: name || email.split('@')[0], email, googleSub: sub, role: 'owner' };
+  const user = { id: newId(), tenantId, name: name || email.split('@')[0], email, googleSub: sub, role: 'Owner' };
   await db.insert(schema.users).values(user);
-  return { ...user, passwordHash: null, createdAt: new Date() };
+  return { ...user, passwordHash: null, createdAt: new Date(), phone: '', active: true, platformAdmin: false };
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -49,7 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Always run a hash comparison so response time does not reveal whether the email exists.
         const hash = u?.passwordHash ?? (dummyHash ??= await bcrypt.hash('not-a-real-password', 12));
         const ok = await bcrypt.compare(parsed.data.password, hash);
-        if (!u || !u.passwordHash || !ok) throw new InvalidLogin();
+        if (!u || !u.passwordHash || !ok || !u.active) throw new InvalidLogin();
         return { id: u.id, name: u.name, email: u.email };
       },
     }),

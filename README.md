@@ -5,6 +5,25 @@ automatic bookings, WhatsApp booking confirmations, calendar, and staff crews wi
 
 Built with Next.js 15 (App Router, server actions), PostgreSQL (Neon) with Drizzle ORM, and Auth.js (Google + email/password).
 
+## Plans
+
+| | Basic ₹799 | Pro ₹1,999 | Enterprise ₹4,999 |
+|---|---|---|---|
+| Bookings, quotations (customer accepts online), GST invoices, customers, My services, core service tools | ✓ | ✓ | ✓ |
+| Active events / team logins | 10 / owner only | Unlimited / 5 | Unlimited / unlimited |
+| Calendar, Finance (payments, expenses with bill photo, profit, compare), Staff & crews, Team and roles (ready roles), all tool tabs, 3 document designs + own terms, WhatsApp sharing and reminders | – | ✓ | ✓ |
+| Vendors, Customize (app name, any colour, rename/hide menu, own fields and statuses, document titles/numbering/GST rate, build your own tools, branches, own roles), Activity log | – | – | ✓ |
+
+The full comparison is in `src/lib/plans.ts` and on Settings → Plan inside the app.
+Locked features show a short explanation and a **Request upgrade** button.
+
+### Platform owner (admin panel)
+The sidebar shows **Admin panel** for platform owners: every company with its plan (change it from the drop-down),
+logins, events, suspend / activate, and pending upgrade requests (approve / decline).
+Make someone a platform owner with either:
+- `UPDATE users SET platform_admin = true WHERE email = '...'` in the Neon SQL editor, or
+- the `PLATFORM_ADMIN_EMAILS` environment variable (comma-separated emails).
+
 ## What works
 
 | Area | What it does |
@@ -15,7 +34,10 @@ Built with Next.js 15 (App Router, server actions), PostgreSQL (Neon) with Drizz
 | Bookings | Accepting creates the booking automatically, exactly once (database `UNIQUE` on `bookings.quotation_id` plus a conditional status update). Declined quotations never create bookings. Mark completed / cancel / reopen. |
 | WhatsApp | On acceptance a booking confirmation is sent through the Meta WhatsApp Cloud API. Every message is stored first (outbox). Failures are saved with the error and can be retried from the booking page or Settings, or the phone number corrected and resent. A daily job retries failed messages (up to 5 attempts). |
 | Staff & crews | Permanent employees (team leaders) and the helper boys they bring. Assign a leader (and their helpers) to a booking, mark attendance, track wages due, record payments, see balances and paid/part-paid/unpaid status. |
-| Calendar, dashboard, customers | Month calendar of bookings, dashboard KPIs and alerts for failed messages, customer list with search and history. |
+| Calendar, dashboard, customers | Month calendar (enquiries in amber), dashboard with money tiles, live weather for your city, notifications, income vs spending chart, mini calendar; customer list with search and history. |
+| Invoices & finance | GST invoices (CGST/SGST, amount in words, numbered per financial year), advance/installment/final payments with live before→after, expenses with bill photo, profit per event, compare events, WhatsApp reminders and receipts. |
+| Services & tools | 15 services with your prices. Tools: catering (recipes, ingredients, menus, purchase generator and lists), decoration (designs, stock with shortage warnings, setups, flower orders), photo & video, entertainment, planning (standard checklist), makeup, invitations. |
+| Team, vendors, customize | Team logins with roles, vendors, Enterprise customisation and activity log. |
 
 ## Run locally
 
@@ -46,6 +68,7 @@ or `pglite:./.pglite` for a quick embedded trial database (no install needed; no
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | for WhatsApp | Meta for Developers → WhatsApp → API setup. Use a permanent System User token. |
 | `WHATSAPP_TEMPLATE_NAME`, `WHATSAPP_TEMPLATE_LANG` | optional | Default `booking_confirmation` / `en` |
 | `CRON_SECRET` | yes | Any long random string; Vercel Cron sends it automatically |
+| `PLATFORM_ADMIN_EMAILS` | optional | Emails that get the Admin panel (or set `users.platform_admin`) |
 
 Settings → Connections in the app shows which of these are set up.
 
@@ -62,6 +85,10 @@ Vanakkam {{1}}, your booking for {{2}} on {{3}}, {{4}} at {{5}} is confirmed wit
 Customer numbers are stored as 10-digit Indian mobiles and sent as `91XXXXXXXXXX`.
 
 ## Tests
+
+`tests/e2e2.py` covers plans and limits, the admin panel, upgrade requests, invoices, payments, expenses with bill photos,
+profit/compare, enquiries and date clashes, catering purchase lists, planning checklists, staff wages as expenses,
+Enterprise customisation, team roles (accountant cannot open staff), suspension and tenant isolation.
 
 The end-to-end test (`tests/e2e.py`, Playwright) runs against a production build with a local Postgres and a mock
 WhatsApp API (`tests/mock_wa.py`, set `WHATSAPP_API_BASE=http://127.0.0.1:3999/v21.0`). It covers sign-up, onboarding,

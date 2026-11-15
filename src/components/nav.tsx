@@ -1,38 +1,58 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Icon } from './icons';
 
-const I = {
-  dash: 'M3 13h8V3H3zm10 8h8V11h-8zM3 21h8v-6H3zm10-18v6h8V3z',
-  cal: 'M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 8h14v10H5z',
-  book: 'M9 11l2 2 4-4M5 4h14a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z',
-  quote: 'M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8',
-  cust: 'M16 11a4 4 0 1 0-8 0M4 21a8 8 0 0 1 16 0M12 7a3 3 0 1 0 0 .01',
-  staff: 'M9 7a3 3 0 1 0 0 .01M17 9a2.5 2.5 0 1 0 0 .01M3 20a6 6 0 0 1 12 0M15 20a5 5 0 0 1 6-4.9',
-  set: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
-};
-const ITEMS: { group?: string; href: string; label: string; icon: keyof typeof I }[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: 'dash' },
-  { group: 'Sales', href: '/quotations', label: 'Quotations', icon: 'quote' },
-  { href: '/bookings', label: 'Bookings', icon: 'book' },
-  { href: '/calendar', label: 'Calendar', icon: 'cal' },
-  { href: '/customers', label: 'Customers', icon: 'cust' },
-  { group: 'Operations', href: '/staff', label: 'Staff & crews', icon: 'staff' },
-  { group: 'Company', href: '/settings', label: 'Settings', icon: 'set' },
-];
+export type NavPage = { href: string; label: string; lock?: string };
+export type NavGroup = { key: string; label: string; icon: string; pages: NavPage[]; section: string };
 
-export function SideNav() {
+/** Longest matching page href wins, so /finance/payment is not mistaken for /finance. */
+export function activeHref(path: string, groups: NavGroup[]) {
+  let best = '';
+  for (const g of groups) for (const p of g.pages) if ((path === p.href || path.startsWith(p.href + '/')) && p.href.length > best.length) best = p.href;
+  return best;
+}
+
+export function SideNav({ groups, admin }: { groups: NavGroup[]; admin: boolean }) {
   const path = usePathname();
+  const cur = activeHref(path, groups);
+  let last = '';
   return (
     <nav aria-label="Main">
-      {ITEMS.map(it => (
-        <div key={it.href}>
-          {it.group && <div className="group">{it.group}</div>}
-          <Link href={it.href} className={'navlink' + (path === it.href || path.startsWith(it.href + '/') ? ' on' : '')} aria-current={path.startsWith(it.href) ? 'page' : undefined}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={I[it.icon]} /></svg>
-            {it.label}
-          </Link>
-        </div>
+      {groups.map(g => {
+        const open = g.pages.find(p => !p.lock) ?? g.pages[0];
+        const allLocked = g.pages.every(p => p.lock);
+        const on = g.pages.some(p => p.href === cur);
+        const head = g.section !== last ? <div className="group">{g.section}</div> : null;
+        last = g.section;
+        return (
+          <div key={g.key}>
+            {head}
+            <Link href={open.href} className={'navlink' + (on ? ' on' : '') + (allLocked ? ' locked' : '')} aria-current={on ? 'page' : undefined}>
+              <Icon name={g.icon} />
+              <span style={{ flex: 1 }}>{g.label}</span>
+              {allLocked ? <span className="navlock"><Icon name="lock" size={12} />{g.pages.some(p => p.lock === 'Pro') ? 'Pro' : g.pages[0].lock}</span> : g.pages.length > 1 ? <span className="navcount">{g.pages.length}</span> : null}
+            </Link>
+          </div>
+        );
+      })}
+      {admin && (<><div className="group">Platform</div><Link href="/admin" className={'navlink' + (path.startsWith('/admin') ? ' on' : '')}><Icon name="admin" /><span>Admin panel</span></Link></>)}
+    </nav>
+  );
+}
+
+/** Tabs for the pages inside the current main menu item. */
+export function SubTabs({ groups }: { groups: NavGroup[] }) {
+  const path = usePathname();
+  const cur = activeHref(path, groups);
+  const g = groups.find(x => x.pages.some(p => p.href === cur));
+  if (!g || g.pages.length < 2) return null;
+  return (
+    <nav className="subtabs" aria-label={`${g.label} sections`}>
+      {g.pages.map(p => (
+        <Link key={p.href} href={p.href} className={'subtab' + (p.href === cur ? ' on' : '')} aria-current={p.href === cur ? 'page' : undefined}>
+          {p.lock && <Icon name="lock" size={12} />}{p.label}{p.lock && <span className="muted small"> {p.lock}</span>}
+        </Link>
       ))}
     </nav>
   );
