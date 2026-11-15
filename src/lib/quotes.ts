@@ -89,9 +89,20 @@ export async function decideQuotation(opts: { quotationId: string; tenantId?: st
   }
 
   await logQuoteEvent(q.tenantId, q.id, opts.decision === 'Accepted' ? 'accepted' : 'declined', opts.actor, opts.decision === 'Declined' ? (opts.reason || '') : '');
-  if (opts.decision === 'Declined') return { ok: true, status: 'Declined' };
+  if (opts.decision === 'Declined') {
+    // The quotation was raised for an enquiry: show that event as declined too.
+    if (q.bookingId) await db.update(schema.bookings).set({ status: 'Declined' })
+      .where(and(eq(schema.bookings.id, q.bookingId), eq(schema.bookings.tenantId, q.tenantId), eq(schema.bookings.status, 'Enquiry')));
+    return { ok: true, status: 'Declined', bookingId: q.bookingId ?? undefined };
+  }
 
   const { booking, created } = await ensureBookingForQuote(q);
+  // Accepting a quotation also raises its invoice straight away.
+  try {
+    const { ensureInvoiceForQuote } = await import('./invoice');
+    const inv = await ensureInvoiceForQuote(q, booking);
+    if (inv?.created) await logQuoteEvent(q.tenantId, q.id, 'invoice_created', 'System', `Invoice ${inv.invoice.docNo} created automatically`);
+  } catch (e) { console.error('[invoice] could not create invoice for quotation', q.id, e); }
   let notification: { status: string; lastError: string | null } | undefined;
   if (created) {
     await logQuoteEvent(q.tenantId, q.id, 'booking_created', 'System', `Booking ${bookingNo(booking.number)} created automatically`);

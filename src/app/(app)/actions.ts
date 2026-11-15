@@ -174,9 +174,10 @@ export async function decideAction(_: ActionState, fd: FormData): Promise<Action
   const decision = fd.get('decision') === 'Accepted' ? 'Accepted' : 'Declined';
   const reason = String(fd.get('reason') ?? '').trim();
   const r = await decideQuotation({ quotationId: id, tenantId: tenant.id, decision, actor: `${user.name} (on behalf of customer)`, reason });
-  revalidatePath(`/quotations/${id}`); revalidatePath('/bookings'); revalidatePath('/dashboard');
+  revalidatePath('/quotations'); revalidatePath(`/quotations/${id}`); revalidatePath('/bookings'); revalidatePath('/dashboard'); revalidatePath('/calendar');
   if (!r.ok) return { error: r.error };
   await logActivity(ctx, `Marked a quotation as ${r.status.toLowerCase()} for the customer`);
+  if (fd.get('stay') === '1') return { ok: true, message: r.status === 'Accepted' ? 'Accepted. The event is now a confirmed booking.' : 'Declined.' };
   if (r.status === 'Declined') return { ok: true, message: 'The quotation was marked as declined. No booking was created.' };
   redirect(`/bookings/${r.bookingId}?new=1`);
 }

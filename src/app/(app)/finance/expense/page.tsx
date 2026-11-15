@@ -16,7 +16,7 @@ export default async function AddExpense({ searchParams }: { searchParams: Promi
   const today = todayIST();
   const bs = await ctx.db.select().from(schema.bookings).where(eq(schema.bookings.tenantId, ctx.tenant.id));
   const money = await moneyByBooking(ctx);
-  const sorted = bs.filter(b => b.status !== 'Cancelled').sort((a, b) => Math.abs(Date.parse(a.eventDate) - Date.parse(today)) - Math.abs(Date.parse(b.eventDate) - Date.parse(today)));
+  const sorted = bs.filter(b => !['Cancelled', 'Declined'].includes(b.status)).sort((a, b) => Math.abs(Date.parse(a.eventDate) - Date.parse(today)) - Math.abs(Date.parse(b.eventDate) - Date.parse(today)));
   const vendors = has(ctx.tenant, 'vendors') ? await ctx.db.select({ id: schema.vendors.id, name: schema.vendors.name }).from(schema.vendors).where(eq(schema.vendors.tenantId, ctx.tenant.id)).orderBy(asc(schema.vendors.name)) : [];
   return (<>
     <PageHead title="Add expense" sub="Record what an event cost you. Its profit updates straight away." />

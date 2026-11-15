@@ -12,8 +12,9 @@ import { PaymentForm } from '@/components/payment-form';
 import { has, perk } from '@/lib/plans';
 import { fmtDate, inr, todayIST, waNumber } from '@/lib/util';
 import { markPaidAction } from '../actions';
+import { AutoPrint } from '@/components/auto-print';
 
-export default async function InvoicePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ created?: string }> }) {
+export default async function InvoicePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ created?: string; print?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const ctx = await requireUser();
@@ -33,7 +34,8 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
       <PageHead title={`Invoice ${inv.docNo}`} badge={<Badge s={status} />} sub={<>{customer.name}{b && <> · <Link href={`/bookings/${b.id}`}>{b.title}</Link></>}</>}
         actions={<>{waOk && customer.phone && <a className="btn good" target="_blank" rel="noopener noreferrer" href={`https://wa.me/${waNumber(customer.phone)}?text=${encodeURIComponent(`Vanakkam ${customer.name}, invoice ${inv.docNo} from ${tenant.name}: total ${inr(inv.total)}, paid ${inr(paid)}, balance ${inr(bal)}. Thank you!`)}`}>Share on WhatsApp</a>}<PrintButton /></>} />
       <div className="body">
-        {sp.created && <div className="formok">Invoice created.</div>}
+        <AutoPrint on={sp.print === '1'} />
+        {sp.created && <div className="formok no-print">Invoice created.</div>}
         <div className="split">
           <DocPaper kind="invoice" tenant={tenant} customer={customer} no={inv.docNo} date={inv.issuedOn} items={inv.items} discount={inv.discount} gst={inv.gst} gstRate={inv.gstRate} notes={inv.notes} paid={paid}
             ev={b ? { title: b.title, type: b.eventType, date: b.eventDate, startTime: b.startTime, endTime: b.endTime, venue: b.venue, guests: b.guests } : null} />

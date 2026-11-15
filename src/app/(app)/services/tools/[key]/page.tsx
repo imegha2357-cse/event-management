@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { and, asc, eq, ne } from 'drizzle-orm';
+import { and, asc, eq, notInArray } from 'drizzle-orm';
 import { schema } from '@/db';
 import { requireUser, gate } from '@/lib/session';
 import { PageHead, Empty } from '@/components/page';
@@ -26,7 +26,7 @@ export default async function ToolPage({ params, searchParams }: { params: Promi
   const rows = await loadRows(ctx, tool.key);
   const today = todayIST();
   const evs = await ctx.db.select({ id: schema.bookings.id, title: schema.bookings.title, date: schema.bookings.eventDate, guests: schema.bookings.guests }).from(schema.bookings)
-    .where(and(eq(schema.bookings.tenantId, ctx.tenant.id), ne(schema.bookings.status, 'Cancelled'))).orderBy(asc(schema.bookings.eventDate));
+    .where(and(eq(schema.bookings.tenantId, ctx.tenant.id), notInArray(schema.bookings.status, ['Cancelled', 'Declined']))).orderBy(asc(schema.bookings.eventDate));
   const ev = (id?: string | null) => evs.find(e => e.id === id);
   const svcOn = new Set<string>(ctx.services.filter(s => s.on).map(s => s.key));
   const tabs = tool.tabs.filter(t => !t.needs || svcOn.has(t.needs));

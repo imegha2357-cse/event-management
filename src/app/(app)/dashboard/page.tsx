@@ -22,7 +22,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const { db, tenant, user, tools } = ctx;
   const today = todayIST(), mk = today.slice(0, 7);
   const B = schema.bookings, Q = schema.quotations, C = schema.customers;
-  const all = await db.select({ b: B, customer: C.name }).from(B).innerJoin(C, eq(C.id, B.customerId)).where(and(eq(B.tenantId, tenant.id), sql`${B.status} <> 'Cancelled'`));
+  const all = await db.select({ b: B, customer: C.name }).from(B).innerJoin(C, eq(C.id, B.customerId)).where(and(eq(B.tenantId, tenant.id), sql`${B.status} not in ('Cancelled','Declined')`));
   const upcoming = all.filter(x => x.b.eventDate >= today).sort((a, b) => a.b.eventDate.localeCompare(b.b.eventDate));
   const next30 = upcoming.filter(x => daysUntil(x.b.eventDate, today) <= 30).length;
   const money = await moneyByBooking(ctx);

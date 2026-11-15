@@ -98,11 +98,15 @@ with sync_playwright() as p:
     pub = newp(); pub.goto(link); pub.click("button:has-text('Accept quotation')"); pub.wait_for_selector("text=Booking confirmed", timeout=20000)
     check("public accept + WhatsApp confirmation", "sent to your WhatsApp" in pub.inner_text("body") and len(mock("/")) == 1)
     go(page, f"/quotations/{qid}")
-    page.click("a:has-text('Create invoice')"); wait_url(page, re.compile(r"/invoices/new\?booking="))
-    bid = page.url.split("booking=")[1]
-    check("invoice form prefilled from quotation", page.input_value("input[aria-label='Item 1 description']") == "Stage decoration")
-    page.click("button:has-text('Create invoice')"); wait_url(page, re.compile(r"/invoices/[0-9a-f-]{36}\?created=1"))
+    check("accepting created the invoice automatically", page.locator("a:has-text('Invoice SLE/')").count() == 1 and "Invoice created" in page.inner_text(".timeline"), page.inner_text("body")[:600])
+    bid = page.locator("a[href^='/bookings/']").first.get_attribute("href").split("/bookings/")[1]
+    go(page, "/quotations"); check("quotations list has View, Print and Invoice buttons", page.locator(f"tr:has-text('Priya & Arun wedding') a:has-text('Print')").count() == 1 and page.locator(f"tr:has-text('Priya & Arun wedding') a:has-text('Invoice')").count() == 1)
+    go(page, "/invoices"); check("invoices list has View and Print", page.locator("tr:has-text('Priya Kumar') a:has-text('View')").count() == 1 and page.locator("tr:has-text('Priya Kumar') a:has-text('Print')").count() == 1)
+    page.locator("tr:has-text('Priya Kumar') a:has-text('View')").click(); wait_url(page, re.compile(r"/invoices/[0-9a-f-]{36}$"))
     inv_id = page.url.split("/invoices/")[1].split("?")[0]
+    page.add_init_script("window.__printed = 0; window.print = () => { window.__printed++; };"); go(page, f"/invoices/{inv_id}?print=1")
+    page.wait_for_timeout(1200); check("Print link opens the print dialog", page.evaluate("window.__printed") == 1)
+    go(page, f"/invoices/{inv_id}")
     check("invoice numbered SLE/<FY>/0001", re.search(r"SLE/\d{4}-\d{2}/0001", page.inner_text("h1")) is not None)
     check("invoice shows amount in words", "Rupees One Lakh Twenty Thousand Only" in page.inner_text("article"))
     page.fill("#amount", "50000")

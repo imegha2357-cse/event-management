@@ -9,6 +9,8 @@ import { fmtDate, fmtTime, inr, bookingNo, todayIST } from '@/lib/util';
 import { BASE_STATUSES, SVC } from '@/lib/catalog';
 import { isEnt, LIMITS } from '@/lib/plans';
 import { setBookingStatusAction } from './actions';
+import { DecisionButtons } from '@/components/decision-buttons';
+import { quoteLabel } from '@/lib/docs';
 
 export const metadata = { title: 'Bookings' };
 const VIEWS = [{ k: 'upcoming', l: 'Upcoming' }, { k: 'past', l: 'Past' }, { k: 'all', l: 'All' }];
@@ -33,8 +35,12 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
   const counts = await db.select({ s: B.status, n: sql<number>`count(*)::int` }).from(B).where(eq(B.tenantId, tenant.id)).groupBy(B.status);
   const cnt = (s: string) => counts.find(c => c.s === s)?.n ?? 0;
   const [{ n: customers }] = await db.select({ n: sql<number>`count(*)::int` }).from(C).where(eq(C.tenantId, tenant.id));
-  const active = counts.filter(c => !['Completed', 'Cancelled'].includes(c.s)).reduce((a, c) => a + c.n, 0);
+  const active = counts.filter(c => !['Completed', 'Cancelled', 'Declined'].includes(c.s)).reduce((a, c) => a + c.n, 0);
   const lim = LIMITS[ctx.plan].events;
+  // Quotations raised for enquiries (accept/decline straight from this list)
+  const forEnq = await db.select({ id: schema.quotations.id, bookingId: schema.quotations.bookingId, status: schema.quotations.status, number: schema.quotations.number, created: schema.quotations.createdAt })
+    .from(schema.quotations).where(and(eq(schema.quotations.tenantId, tenant.id), sql`${schema.quotations.bookingId} is not null`)).orderBy(desc(schema.quotations.createdAt));
+  const quoteFor = (bid: string) => forEnq.find(x => x.bookingId === bid);
   const branches = ent ? custom.branches ?? [] : [];
   const fields = ent ? custom.eventFields ?? [] : [];
   const link = (p: Record<string, string>) => '/bookings?' + new URLSearchParams({ view, ...(status ? { status } : {}), ...(q ? { q } : {}), ...p }).toString();
@@ -59,7 +65,7 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
         </div>
         <div className="panel">
           {rows.length === 0 ? <Empty title="No bookings match">Create one with “New booking”, or send a quotation your customer can accept.</Empty> : (
-            <div className="tablewrap"><table><thead><tr><th>Date</th><th>Event</th><th>Customer</th><th>Venue</th><th>Services</th><th>Status</th><th className="num">Amount</th><th /></tr></thead><tbody>
+            <div className="tablewrap"><table><thead><tr><th>Date</th><th>Event</th><th>Customer</th><th>Venue</th><th>Services</th><th>Status</th><th className="num">Amount</th><th className="num">Quotation</th></tr></thead><tbody>
               {rows.map(({ b, customer }) => (
                 <tr key={b.id}>
                   <td className="nowrap">{fmtDate(b.eventDate)}<div className="small muted">{fmtTime(b.startTime)}</div></td>
@@ -70,7 +76,11 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
                   <td><div className="chips">{(b.services ?? []).map(k => <span key={k} className="chip">{SVC[k]?.name ?? k}</span>)}</div></td>
                   <td><AutoSelect action={setBookingStatusAction} fields={{ rid: b.id }} name="status" value={b.status} options={statuses} label={`Status of ${b.title}`} /></td>
                   <td className="num">{b.total ? inr(b.total) : <span className="muted">—</span>}</td>
-                  <td className="num">{!b.quotationId && <Link className="btn sm" href={`/quotations/new?booking=${b.id}`}>Make quotation</Link>}</td>
+                  <td className="num">{(() => { const q = !b.quotationId ? quoteFor(b.id) : undefined;
+                    if (q && (q.status === 'Draft' || q.status === 'Sent')) return <DecisionButtons quoteId={q.id} status={q.status} label={quoteLabel(tenant, q.number)} />;
+                    if (b.status === 'Declined') return <span className="decided no">✗ Declined</span>;
+                    if (b.quotationId) return <span className="decided ok">✓ Booked</span>;
+                    return <Link className="btn sm" href={`/quotations/new?booking=${b.id}`}>Make quotation</Link>; })()}</td>
                 </tr>))}
             </tbody></table></div>)}
         </div>

@@ -9,6 +9,7 @@ import { perk } from '@/lib/plans';
 import { docTotals, fy, PAY_KINDS, PAY_MODES } from '@/lib/catalog';
 import { docCfg } from '@/lib/docs';
 import { invoicePaid } from '@/lib/money';
+import { insertInvoice, missingInvoiceBookings } from '@/lib/invoice';
 import { isUniqueViolation } from '@/lib/quotes';
 import { inr, newId, todayIST } from '@/lib/util';
 
@@ -33,21 +34,11 @@ export async function createInvoiceAction(_: ActionState, fd: FormData): Promise
   if (!b) return { error: 'Booking not found.' };
   const [existing] = await db.select().from(schema.invoices).where(eq(schema.invoices.bookingId, b.id)).limit(1);
   if (existing) redirect(`/invoices/${existing.id}`);
-  const cfg = docCfg(tenant);
   const gst = Boolean(tenant.gstin) && fd.get('gst') === 'on';
   const lines = d.items.map(i => ({ desc: i.desc, qty: i.qty, rate: Math.round(i.rate) }));
-  const t = docTotals(lines, d.discount, gst, cfg.gstRate);
-  const year = fy(d.issuedOn);
-  const id = newId();
-  for (let attempt = 0; ; attempt++) {
-    const [r] = await db.select({ m: max(schema.invoices.number) }).from(schema.invoices).where(and(eq(schema.invoices.tenantId, tenant.id), eq(schema.invoices.fy, year)));
-    const number = (r?.m ?? 0) + 1;
-    try {
-      await db.insert(schema.invoices).values({ id, tenantId: tenant.id, fy: year, number, docNo: `${cfg.prefix}/${year}/${String(number).padStart(4, '0')}`, bookingId: b.id, quotationId: b.quotationId,
-        customerId: b.customerId, issuedOn: d.issuedOn, items: lines, discount: t.discount, gst, gstRate: cfg.gstRate, subtotal: t.subtotal, tax: t.tax, total: t.total, notes: d.notes });
-      break;
-    } catch (e) { if (!isUniqueViolation(e) || attempt >= 3) throw e; }
-  }
+  const { invoice } = await insertInvoice(tenant, b, { items: lines, discount: d.discount, gst, issuedOn: d.issuedOn, notes: d.notes });
+  const t = { total: invoice.total };
+  const id = invoice.id;
   if (b.status === 'Enquiry') await db.update(schema.bookings).set({ status: 'Confirmed' }).where(eq(schema.bookings.id, b.id));
   if (!b.total) await db.update(schema.bookings).set({ total: t.total, items: lines }).where(eq(schema.bookings.id, b.id));
   await logActivity(ctx, `Created invoice for “${b.title}” (${inr(t.total)})`);
@@ -102,4 +93,16 @@ export async function markPaidAction(_: ActionState, fd: FormData): Promise<Acti
   await logActivity(ctx, `Marked invoice ${inv.docNo} as fully paid`);
   revalidatePath(`/invoices/${inv.id}`); revalidatePath('/invoices');
   return { ok: true, message: 'Marked as fully paid.' };
+}
+
+/** Raises invoices for accepted bookings that do not have one yet (e.g. accepted before automatic invoices). */
+export async function generateMissingInvoicesAction(): Promise<ActionState> {
+  const ctx = await requireUser();
+  const no = denied(ctx, 'invoices'); if (no) return { error: no };
+  const missing = await missingInvoiceBookings(ctx);
+  let n = 0;
+  for (const { b, q } of missing) { const r = await insertInvoice(ctx.tenant, b, { items: q.items, discount: q.discount, gst: q.gst }); if (r.created) n++; }
+  if (n) await logActivity(ctx, `Generated ${n} invoice${n === 1 ? '' : 's'} for accepted bookings`);
+  revalidatePath('/invoices'); revalidatePath('/bookings');
+  return { ok: true, message: n ? `${n} invoice${n === 1 ? '' : 's'} created.` : 'Every accepted booking already has an invoice.' };
 }

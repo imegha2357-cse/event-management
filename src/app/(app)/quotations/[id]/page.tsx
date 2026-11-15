@@ -14,13 +14,14 @@ import { CopyButton } from '@/components/ui';
 import { fmtDate, fmtDateTime, inr, bookingNo, waNumber } from '@/lib/util';
 import { siteOrigin } from '@/lib/origin';
 import { decideAction, markSentAction } from '../../actions';
+import { AutoPrint } from '@/components/auto-print';
 
 const ACTION_LABEL: Record<string, string> = {
   created: 'Quotation created', edited: 'Quotation edited', sent: 'Marked as sent', accepted: 'Accepted', declined: 'Declined',
-  booking_created: 'Booking created', whatsapp_sent: 'WhatsApp confirmation sent', whatsapp_failed: 'WhatsApp confirmation failed',
+  booking_created: 'Booking created', invoice_created: 'Invoice created', whatsapp_sent: 'WhatsApp confirmation sent', whatsapp_failed: 'WhatsApp confirmation failed',
 };
 
-export default async function QuotePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ created?: string }> }) {
+export default async function QuotePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ created?: string; print?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const ctx = await requireUser();
@@ -34,7 +35,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
   const [note] = booking ? await db.select().from(schema.notifications).where(eq(schema.notifications.bookingId, booking.id)).orderBy(desc(schema.notifications.createdAt)).limit(1) : [];
   const link = `${await siteOrigin()}/q/${q.publicToken}`;
   const open = q.status === 'Draft' || q.status === 'Sent';
-  const [inv] = booking ? await db.select().from(schema.invoices).where(eq(schema.invoices.quotationId, q.id)).limit(1) : [];
+  const [inv] = booking ? await db.select().from(schema.invoices).where(eq(schema.invoices.bookingId, booking.id)).limit(1) : [];
   const waOk = perk(tenant, 'whatsappShare');
   const waText = `Vanakkam ${customer.name}, here is your quotation ${quoteLabel(tenant, q.number)} from ${tenant.name} for ${q.eventTitle} on ${fmtDate(q.eventDate)} — total ${inr(q.total)}.\n\nPlease review and accept or decline here: ${link}`;
 
@@ -43,7 +44,8 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
       <PageHead title={quoteLabel(tenant, q.number)} badge={<Badge s={q.status} />} sub={<>{customer.name} · {q.eventTitle} · {fmtDate(q.eventDate)}</>}
         actions={<>{open && <Link className="btn" href={`/quotations/${q.id}/edit`}>Edit</Link>}<PrintButton /></>} />
       <div className="body">
-        {sp.created && <div className="formok">Quotation saved as a draft. Share the review link with your customer below.</div>}
+        <AutoPrint on={sp.print === '1'} />
+        {sp.created && <div className="formok no-print">Quotation saved as a draft. Share the review link with your customer below.</div>}
         <div className="split">
           <QuoteDocument q={q} tenant={tenant} customer={customer} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

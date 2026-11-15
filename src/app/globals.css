@@ -324,3 +324,12 @@ table.plans th.cur{background:var(--primary-soft);color:var(--primary)}
 .badge{background:var(--info-soft);color:var(--info)}
 .badge.Enquiry,.badge.Pending,.badge.Ordered,.badge.Doing{background:var(--warn-soft);color:var(--warn)}
 .badge.Purchased,.badge.Done,.badge.Approved{background:var(--good-soft);color:var(--good)}
+.decide{display:inline-flex;gap:6px;flex-wrap:nowrap}
+.decide .btn{min-width:84px}
+.decided{display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:12.5px;padding:3px 10px;border-radius:4px;white-space:nowrap}
+.decided.ok{background:var(--good-soft);color:var(--good)}
+.decided.no{background:var(--bad-soft);color:var(--bad)}
+.btn.danger:not(.solid){border-color:#f2c9c4}
+.timeline li.invoice_created::before{background:var(--good)}
+.rowacts{display:inline-flex;gap:6px;flex-wrap:nowrap}
+@media print{.subtabs,.no-print{display:none!important}}

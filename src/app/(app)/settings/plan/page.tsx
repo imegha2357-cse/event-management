@@ -17,7 +17,7 @@ export default async function PlanPage() {
   if (ctx.user.role !== 'Owner') return <NoAccess />;
   const { db, tenant, plan } = ctx;
   const [pending] = await db.select().from(schema.upgradeRequests).where(and(eq(schema.upgradeRequests.tenantId, tenant.id), eq(schema.upgradeRequests.status, 'Pending'))).orderBy(desc(schema.upgradeRequests.createdAt)).limit(1);
-  const [{ n: activeEvents }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.bookings).where(and(eq(schema.bookings.tenantId, tenant.id), sql`${schema.bookings.status} not in ('Completed','Cancelled')`));
+  const [{ n: activeEvents }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.bookings).where(and(eq(schema.bookings.tenantId, tenant.id), sql`${schema.bookings.status} not in ('Completed','Cancelled','Declined')`));
   const [{ n: logins }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.users).where(and(eq(schema.users.tenantId, tenant.id), eq(schema.users.active, true)));
   const lim = LIMITS[plan];
   const locked = MODULES.filter(m => !has(tenant, m.key));

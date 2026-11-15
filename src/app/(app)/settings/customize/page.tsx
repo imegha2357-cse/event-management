@@ -56,7 +56,7 @@ export default async function Customize({ searchParams }: { searchParams: Promis
   if (tab === 'statuses') body = (
     <div className="panel"><div className="panel-b" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <p className="small muted">The standard statuses stay. Add your own steps in between, such as “Advance paid” or “On hold”. They appear in the Bookings status list and filters.</p>
-      <div className="chips">{['Enquiry', 'Confirmed', 'Completed', 'Cancelled'].map(x => <span key={x} className="chip">{x}</span>)}
+      <div className="chips">{['Enquiry', 'Confirmed', 'Completed', 'Declined', 'Cancelled'].map(x => <span key={x} className="chip">{x}</span>)}
         {(c.statuses ?? []).map(x => <span key={x} className="chip info" style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>{x}<ActionButton action={deleteStatusAction} fields={{ status: x }} label="×" className="linkbtn" /></span>)}</div>
       <MiniForm action={addStatusAction} submit="Add status" className="btn" style={{ flexDirection: 'row', alignItems: 'flex-end' }}><div className="field"><label htmlFor="st">New status</label><input id="st" name="status" className="input" placeholder="e.g. Advance paid" /></div></MiniForm>
     </div></div>);

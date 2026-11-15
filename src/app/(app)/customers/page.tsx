@@ -19,8 +19,8 @@ export default async function Customers({ searchParams }: { searchParams: Promis
   const term = q.trim();
   const rows = await db.select({
     c: C,
-    bookings: sql<number>`(select count(*)::int from bookings b where b.customer_id = "customers"."id" and b.status <> 'Cancelled')`,
-    value: sql<number>`(select coalesce(sum(b.total),0)::int from bookings b where b.customer_id = "customers"."id" and b.status <> 'Cancelled')`,
+    bookings: sql<number>`(select count(*)::int from bookings b where b.customer_id = "customers"."id" and b.status not in ('Cancelled','Declined'))`,
+    value: sql<number>`(select coalesce(sum(b.total),0)::int from bookings b where b.customer_id = "customers"."id" and b.status not in ('Cancelled','Declined'))`,
   }).from(C).where(and(eq(C.tenantId, tenant.id), term ? or(ilike(C.name, `%${term}%`), ilike(C.phone, `%${term}%`), ilike(C.city, `%${term}%`)) : undefined))
     .orderBy(desc(C.createdAt)).limit(200);
   return (

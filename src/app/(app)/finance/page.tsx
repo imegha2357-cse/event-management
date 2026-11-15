@@ -23,7 +23,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
   const mk = months12.includes(sp.month ?? '') ? sp.month! : today.slice(0, 7);
   const bookings = await db.select({ b: schema.bookings, c: schema.customers }).from(schema.bookings).innerJoin(schema.customers, eq(schema.customers.id, schema.bookings.customerId)).where(eq(schema.bookings.tenantId, tenant.id));
   const money = await moneyByBooking(ctx);
-  const evs = bookings.map(x => ({ ...x, m: money.get(x.b.id)! })).filter(x => x.m.quote > 0 && x.b.status !== 'Cancelled');
+  const evs = bookings.map(x => ({ ...x, m: money.get(x.b.id)! })).filter(x => x.m.quote > 0 && !['Cancelled', 'Declined'].includes(x.b.status));
   const pending = evs.reduce((s, x) => s + x.m.pending, 0);
   const owing = new Set(evs.filter(x => x.m.pending > 0).map(x => x.b.customerId)).size;
   const soon = evs.filter(x => x.b.eventDate >= today && x.m.received === 0).sort((a, b) => a.b.eventDate.localeCompare(b.b.eventDate))[0];

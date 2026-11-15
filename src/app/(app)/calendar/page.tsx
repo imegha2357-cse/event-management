@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { and, asc, eq, gte, lte, ne } from 'drizzle-orm';
+import { and, asc, eq, gte, lte, notInArray } from 'drizzle-orm';
 import { schema } from '@/db';
 import { requireUser, gate } from '@/lib/session';
 import { Gate } from '@/components/locked';
@@ -22,7 +22,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
   const g = gate(ctx, 'calendar'); if (g) return <Gate g={g} plan={ctx.plan} />;
   const { db, tenant } = ctx;
   const B = schema.bookings;
-  const events = await db.select().from(B).where(and(eq(B.tenantId, tenant.id), ne(B.status, 'Cancelled'), gte(B.eventDate, gridStart), lte(B.eventDate, gridEnd))).orderBy(asc(B.eventDate), asc(B.startTime));
+  const events = await db.select().from(B).where(and(eq(B.tenantId, tenant.id), notInArray(B.status, ['Cancelled', 'Declined']), gte(B.eventDate, gridStart), lte(B.eventDate, gridEnd))).orderBy(asc(B.eventDate), asc(B.startTime));
   const prev = iso(y, m - 2, 1).slice(0, 7), next = iso(y, m, 1).slice(0, 7);
   const days = Array.from({ length: 42 }, (_, i) => iso(y, m - 1, 1 - startOffset + i));
   const monthCount = events.filter(e => e.eventDate.slice(0, 7) === `${y}-${String(m).padStart(2, '0')}`).length;

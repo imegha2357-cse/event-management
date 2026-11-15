@@ -158,7 +158,7 @@ export async function addStatusAction(_: ActionState, fd: FormData): Promise<Act
   const { ctx, error } = await entCtx(); if (error) return { error };
   const s = String(fd.get('status') ?? '').trim().slice(0, 30);
   if (s.length < 2) return { fieldErrors: { status: 'Enter a status.' } };
-  if (['Enquiry', 'Confirmed', 'Completed', 'Cancelled', ...(ctx.custom.statuses ?? [])].some(x => x.toLowerCase() === s.toLowerCase())) return { fieldErrors: { status: 'That status already exists.' } };
+  if (['Enquiry', 'Confirmed', 'Completed', 'Declined', 'Cancelled', ...(ctx.custom.statuses ?? [])].some(x => x.toLowerCase() === s.toLowerCase())) return { fieldErrors: { status: 'That status already exists.' } };
   await saveCustom(ctx, c => ({ ...c, statuses: [...(c.statuses ?? []), s] }), `Added event status “${s}”`);
   return { ok: true, message: `Status “${s}” added.` };
 }

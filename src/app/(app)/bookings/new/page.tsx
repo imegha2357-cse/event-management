@@ -21,7 +21,7 @@ export default async function NewBooking({ searchParams }: { searchParams: Promi
     The Basic plan allows {lim} active events at a time. Mark finished events as Completed, or <Link href="/settings/plan">ask for an upgrade</Link>.</div></div></>);
   const { customers, eventTypes } = await quoteFormData(ctx);
   const taken = await ctx.db.select({ date: schema.bookings.eventDate, title: schema.bookings.title }).from(schema.bookings)
-    .where(and(eq(schema.bookings.tenantId, ctx.tenant.id), gte(schema.bookings.eventDate, today), notInArray(schema.bookings.status, ['Completed', 'Cancelled'])));
+    .where(and(eq(schema.bookings.tenantId, ctx.tenant.id), gte(schema.bookings.eventDate, today), notInArray(schema.bookings.status, ['Completed', 'Cancelled', 'Declined'])));
   const ent = isEnt(ctx.tenant);
   return (<>
     <PageHead title="New booking" sub="Confirmed bookings and enquiries both appear on the calendar; enquiries in amber." />

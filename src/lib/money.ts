@@ -42,6 +42,6 @@ export async function invoicePaid(ctx: Pick<Ctx, 'db'>, invoiceId: string) {
 /** Active (not completed or cancelled) bookings, for the Basic plan limit. */
 export async function activeEventCount(ctx: Pick<Ctx, 'db' | 'tenant'>) {
   const [r] = await ctx.db.select({ n: sql<number>`count(*)::int` }).from(schema.bookings)
-    .where(and(eq(schema.bookings.tenantId, ctx.tenant.id), sql`${schema.bookings.status} not in ('Completed','Cancelled')`));
+    .where(and(eq(schema.bookings.tenantId, ctx.tenant.id), sql`${schema.bookings.status} not in ('Completed','Cancelled','Declined')`));
   return r?.n ?? 0;
 }
