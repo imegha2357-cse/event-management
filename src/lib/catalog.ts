@@ -33,15 +33,12 @@ export const PAY_KINDS = ['Advance', 'Installment', 'Final payment'];
 export const PAY_MODES = ['Cash', 'UPI', 'Bank transfer', 'Cheque', 'Card'];
 export const SWATCHES = ['#2266d6', '#6b4eff', '#c2410c', '#0f766e', '#be185d', '#a16207', '#15803d', '#7c2d12'];
 export const DOC_STYLES: Record<string, [string, string]> = { classic: ['Classic', 'Clean, with a colour line'], modern: ['Modern colour band', 'Bold header in your colour'], elegant: ['Elegant centred', 'Centred, classic serif titles'] };
-export const BASE_STATUSES = ['Enquiry', 'Confirmed', 'Completed', 'Declined', 'Cancelled'];
+/** Statuses a booking can have. Bookings are always confirmed events: a quotation becomes a booking only when it is accepted. */
+export const BASE_STATUSES = ['Confirmed', 'Completed', 'Cancelled'];
+/** Older records that are not bookings (pre-booking enquiries and declined quotations). Never shown in Bookings. */
+export const NOT_BOOKINGS = ['Enquiry', 'Declined'];
 /** Events that are not going ahead: left out of calendars, money and crew lists. */
 export const CLOSED = ['Cancelled', 'Declined'];
-export const CITY_GEO: Record<string, [number, number]> = {
-  chennai: [13.08, 80.27], coimbatore: [11.02, 76.96], madurai: [9.93, 78.12], salem: [11.66, 78.15], tiruchirappalli: [10.79, 78.7], trichy: [10.79, 78.7],
-  tirunelveli: [8.71, 77.76], kanyakumari: [8.09, 77.54], nagercoil: [8.18, 77.41], vellore: [12.92, 79.13], erode: [11.34, 77.72], thanjavur: [10.79, 79.14],
-  bengaluru: [12.97, 77.59], bangalore: [12.97, 77.59], hyderabad: [17.39, 78.49], mumbai: [19.08, 72.88], delhi: [28.61, 77.21], kochi: [9.93, 76.27],
-  pondicherry: [11.94, 79.81], puducherry: [11.94, 79.81], tiruppur: [11.11, 77.34], hosur: [12.74, 77.83], kanchipuram: [12.83, 79.7], dindigul: [10.36, 77.98],
-};
 
 /** Indian number words for "amount in words" on documents. */
 export function words(n: number): string {

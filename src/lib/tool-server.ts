@@ -2,27 +2,8 @@ import 'server-only';
 import { and, eq } from 'drizzle-orm';
 import { schema } from '@/db';
 import type { Ctx } from './session';
-import { starterFor, type ToolDef } from './tools';
-import { newId } from './util';
 
 export type Row = { id: string; bookingId: string | null; createdAt: Date } & Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-
-/** Loads the starter recipes, designs, packages… the first time a company opens a tool. Safe if two requests race. */
-export async function ensureSeeded(ctx: Pick<Ctx, 'db' | 'tenant'>, tool: ToolDef) {
-  if (tool.custom) return;
-  const seed = starterFor(tool.key);
-  if (!Object.keys(seed).length) return;
-  const claimed = await ctx.db.insert(schema.toolSeeded).values({ tenantId: ctx.tenant.id, tool: tool.key }).onConflictDoNothing().returning();
-  if (!claimed.length) return;
-  const idMap = new Map<string, string>();
-  for (const rows of Object.values(seed)) for (const r of rows) idMap.set(String(r.id), newId());
-  const remap = (v: unknown): unknown => Array.isArray(v) ? v.map(remap) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, k === 'ref' ? idMap.get(String(x)) ?? x : remap(x)])) : v;
-  const values = Object.entries(seed).flatMap(([coll, rows]) => rows.map(r => {
-    const { id, ...data } = r;
-    return { id: idMap.get(String(id))!, tenantId: ctx.tenant.id, tool: tool.key, coll, data: remap(data) as Record<string, unknown> };
-  }));
-  if (values.length) await ctx.db.insert(schema.toolRows).values(values);
-}
 
 export async function loadRows(ctx: Pick<Ctx, 'db' | 'tenant'>, toolKey: string) {
   const rows = await ctx.db.select().from(schema.toolRows).where(and(eq(schema.toolRows.tenantId, ctx.tenant.id), eq(schema.toolRows.tool, toolKey)));

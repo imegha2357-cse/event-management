@@ -24,7 +24,6 @@ const bookingSchema = z.object({
   venue: z.string().trim().max(200).optional().default(''),
   crewNeeded: z.coerce.number().int().min(0).max(500).optional().default(0),
   notes: z.string().trim().max(1000).optional().default(''),
-  status: z.enum(['Confirmed', 'Enquiry']),
   branchId: z.string().optional().default(''),
 }).refine(v => !v.startTime || !v.endTime || v.endTime > v.startTime, { path: ['endTime'], message: 'End time must be after start time.' });
 
@@ -72,11 +71,11 @@ export async function saveBookingAction(_: ActionState, fd: FormData): Promise<A
     const number = await nextNumber(schema.bookings, tenant.id);
     try {
       await db.insert(schema.bookings).values({ id, tenantId: tenant.id, number, customerId, title, eventType: d.eventType, eventDate: d.eventDate, setupTime: d.setupTime, startTime: d.startTime,
-        endTime: d.endTime, venue: d.venue, guests: d.guests, crewNeeded: d.crewNeeded, notes: d.notes, status: d.status, services, branchId, custom });
+        endTime: d.endTime, venue: d.venue, guests: d.guests, crewNeeded: d.crewNeeded, notes: d.notes, status: 'Confirmed', services, branchId, custom });
       break;
     } catch (e) { if (!isUniqueViolation(e) || attempt >= 3) throw e; }
   }
-  await logActivity(ctx, `${d.status === 'Enquiry' ? 'Added enquiry' : 'Confirmed booking'} “${title}” on ${fmtDate(d.eventDate)}`);
+  await logActivity(ctx, `Confirmed booking “${title}” on ${fmtDate(d.eventDate)}`);
   revalidatePath('/bookings'); revalidatePath('/dashboard');
   redirect(`/bookings/${id}?saved=1`);
 }
@@ -105,7 +104,7 @@ export async function deleteBookingAction(_: ActionState, fd: FormData): Promise
   const [inv] = await ctx.db.select({ id: schema.invoices.id }).from(schema.invoices).where(eq(schema.invoices.bookingId, id)).limit(1);
   if (inv) return { error: 'This booking has an invoice. Mark it as Cancelled instead.' };
   await ctx.db.delete(schema.bookings).where(eq(schema.bookings.id, id));
-  await logActivity(ctx, `Deleted enquiry “${b.title}”`);
+  await logActivity(ctx, `Deleted booking “${b.title}”`);
   revalidatePath('/bookings');
   redirect('/bookings');
 }

@@ -65,7 +65,7 @@ export const PLAN_MATRIX: [string, string, string, string][] = [
   ['Quotation and invoice design', '1 standard design', '3 designs + your own terms', 'Fully custom: titles, numbering, GST rate, sections'],
   ['WhatsApp sharing, payment reminders and receipts', '—', 'Yes', 'Yes'],
   ['Advance and balance payment tracking', 'Mark as paid only', 'Yes', 'Yes'],
-  ['Dashboard with weather, notifications and calendar', 'Yes', 'Yes', 'Yes'],
+  ['Dashboard with notifications and calendar', 'Yes', 'Yes', 'Yes'],
   ['New quotation and booking forms (with date check)', 'Yes', 'Yes', 'Yes'],
   ['Calendar', '—', 'Yes', 'Yes'],
   ['Expenses and profit per event', '—', 'Yes', 'Yes'],

@@ -188,62 +188,6 @@ export function customToolDef(t: { id: string; name: string; icon: string; field
     tabs: [{ key: 'rows', label: 'All entries', coll: 'rows', noun: 'Entry', add: '+ Add entry', sort: t.fields.some(f => f.type === 'event') ? 'event' : 'created-desc', intro: '', fields, cols }] };
 }
 
-/** Starter rows for a tool, loaded the first time a company opens it. Ids are local; they are re-mapped when saved. */
-type Seed = Record<string, Record<string, unknown>[]>;
-const ING: [string, string, string, string, number][] = [
-  ['g1', 'Ponni rice', 'Grocery', 'kg', 58], ['g2', 'Toor dal', 'Grocery', 'kg', 140], ['g3', 'Sunflower oil', 'Grocery', 'litre', 160], ['g4', 'Ghee', 'Dairy', 'kg', 620],
-  ['g5', 'Onion', 'Vegetables', 'kg', 35], ['g6', 'Tomato', 'Vegetables', 'kg', 30], ['g7', 'Mixed vegetables', 'Vegetables', 'kg', 45], ['g8', 'Coconut', 'Vegetables', 'nos', 30],
-  ['g9', 'Milk', 'Dairy', 'litre', 56], ['g10', 'Sugar', 'Grocery', 'kg', 44], ['g11', 'Semiya (500 g pack)', 'Grocery', 'packet', 40], ['g12', 'Paneer', 'Dairy', 'kg', 360],
-  ['g13', 'Chicken', 'Meat', 'kg', 240], ['g14', 'Mutton', 'Meat', 'kg', 780], ['g15', 'Masala and spices', 'Spices', 'kg', 400], ['g16', 'Banana leaf', 'Disposables', 'nos', 3],
-  ['g17', 'Curd', 'Dairy', 'litre', 60], ['g18', 'Cashew nuts', 'Grocery', 'kg', 900], ['g19', 'Basmati rice', 'Grocery', 'kg', 110], ['g20', 'Urad dal', 'Grocery', 'kg', 130],
-  ['g21', 'Appalam (pack of 50)', 'Grocery', 'packet', 90], ['g22', 'Rava', 'Grocery', 'kg', 50],
-];
-const DISHES: [string, string, string, string, number, [string, number][]][] = [
-  ['d1', 'Banana leaf service', 'Serving', 'Veg', 5, [['g16', 105]]], ['d2', 'White rice', 'Rice', 'Veg', 30, [['g1', 12]]],
-  ['d3', 'Sambar', 'Curry', 'Veg', 40, [['g2', 4], ['g7', 6], ['g6', 2], ['g15', 0.5], ['g3', 1]]], ['d4', 'Rasam', 'Curry', 'Veg', 20, [['g2', 1], ['g6', 3], ['g15', 0.3]]],
-  ['d5', 'Poriyal (beans and carrot)', 'Side', 'Veg', 35, [['g7', 8], ['g8', 8], ['g3', 1]]], ['d6', 'Kootu', 'Side', 'Veg', 35, [['g7', 5], ['g2', 1.5], ['g8', 10]]],
-  ['d7', 'Veg biryani', 'Rice', 'Veg', 110, [['g19', 10], ['g7', 6], ['g3', 2], ['g4', 1], ['g15', 0.8]]], ['d8', 'Chicken biryani', 'Rice', 'Non-veg', 220, [['g19', 10], ['g13', 15], ['g3', 3], ['g15', 1], ['g17', 3]]],
-  ['d9', 'Paneer butter masala', 'Curry', 'Veg', 90, [['g12', 6], ['g6', 4], ['g5', 4], ['g18', 0.5], ['g3', 1.5]]], ['d10', 'Mutton chukka', 'Starter', 'Non-veg', 260, [['g14', 12], ['g5', 4], ['g15', 0.8], ['g3', 2]]],
-  ['d11', 'Semiya payasam', 'Dessert', 'Veg', 45, [['g11', 6], ['g9', 15], ['g10', 4], ['g18', 0.3], ['g4', 0.5]]], ['d12', 'Curd', 'Side', 'Veg', 15, [['g17', 8]]],
-  ['d13', 'Medhu vadai', 'Starter', 'Veg', 25, [['g20', 5], ['g3', 4], ['g5', 1]]], ['d14', 'Appalam', 'Side', 'Veg', 8, [['g21', 2.2]]], ['d15', 'Rava kesari', 'Dessert', 'Veg', 30, [['g22', 5], ['g10', 5], ['g4', 1.5], ['g18', 0.3]]],
-];
-export function starterFor(key: string): Seed {
-  switch (key) {
-    case 'catering': return {
-      ingredients: ING.map(([id, name, cat, unit, rate]) => ({ id, name, cat, unit, rate })),
-      dishes: DISHES.map(([id, name, cat, type, price, recipe]) => ({ id, name, cat, type, price, recipe: recipe.map(([ref, qty]) => ({ ref, qty })) })) };
-    case 'decor': return {
-      designs: [
-        { id: 'ds1', name: 'Kalyana mandapam traditional stage', theme: 'Traditional', use: 'Stage', price: 85000, includes: 'Banana trees, kolam backdrop, brass lamps, marigold strings' },
-        { id: 'ds2', name: 'Pastel floral reception stage', theme: 'Floral', use: 'Stage', price: 120000, includes: 'Pastel roses, orchid arch, fairy lights, white sofa' },
-        { id: 'ds3', name: 'Grand entrance arch', theme: 'Royal', use: 'Entrance', price: 35000, includes: 'Floral arch, welcome board, lamp stands' },
-        { id: 'ds4', name: 'Wedding car decoration', theme: 'Floral', use: 'Car', price: 6000, includes: 'Roses, ribbons and name board' },
-        { id: 'ds5', name: 'Kids birthday balloon theme', theme: 'Kids', use: 'Hall', price: 18000, includes: 'Balloon arch, cut-outs, printed backdrop' }],
-      items: [
-        { id: 'i1', name: 'Backdrop frames (10 x 8 ft)', cat: 'Backdrop', stock: 6, unit: 'nos' }, { id: 'i2', name: 'Royal sofa set', cat: 'Furniture', stock: 4, unit: 'sets' },
-        { id: 'i3', name: 'Brass kuthu vilakku', cat: 'Props', stock: 20, unit: 'nos' }, { id: 'i4', name: 'Fairy light strings', cat: 'Lights', stock: 150, unit: 'nos' },
-        { id: 'i5', name: 'White draping cloth', cat: 'Fabric', stock: 400, unit: 'metres' }, { id: 'i6', name: 'Chiavari chairs', cat: 'Furniture', stock: 300, unit: 'nos' }] };
-    case 'photo': return { packages: [
-      { id: 'pk1', name: 'Silver', includes: '1 photographer, 1 day, 300 edited photos', price: 35000 },
-      { id: 'pk2', name: 'Gold', includes: 'Candid + traditional, 2 days, 40-page album', price: 85000 },
-      { id: 'pk3', name: 'Platinum', includes: 'Candid, traditional, drone, highlight film, 2 albums', price: 160000 }] };
-    case 'ent': return {
-      equip: [
-        { id: 'q1', name: 'Line array speakers', type: 'Speaker', qty: 8, cond: 'Good' }, { id: 'q2', name: 'Pioneer DJ console', type: 'Mixer', qty: 2, cond: 'Good' },
-        { id: 'q3', name: 'Moving head lights', type: 'Lights', qty: 16, cond: 'Good' }, { id: 'q4', name: 'LED wall (10 x 8 ft)', type: 'LED wall', qty: 2, cond: 'Good' },
-        { id: 'q5', name: 'Fog machine', type: 'Effects', qty: 2, cond: 'Needs repair' }, { id: 'q6', name: 'Truss set', type: 'Truss', qty: 4, cond: 'Good' }],
-      artists: [
-        { id: 'a1', name: 'DJ Vicky', act: 'DJ', fee: 40000, phone: '98410 77001' }, { id: 'a2', name: 'Rhythm Crew', act: 'Dance troupe', fee: 30000, phone: '99620 77002' },
-        { id: 'a3', name: 'Priya (anchor)', act: 'Anchor / emcee', fee: 15000, phone: '90030 77003' }] };
-    case 'makeup': return { looks: [
-      { id: 'l1', name: 'Traditional bridal', mins: '3 hours', price: 15000 }, { id: 'l2', name: 'HD reception look', mins: '2 hours', price: 12000 },
-      { id: 'l3', name: 'Airbrush bridal', mins: '3 hours', price: 25000 }, { id: 'l4', name: 'Family member makeup', mins: '45 minutes', price: 3000 }] };
-    case 'invite': return { cards: [
-      { id: 'k1', name: 'Traditional gold foil', style: 'Traditional', price: 45 }, { id: 'k2', name: 'Laser-cut floral', style: 'Laser cut', price: 85 },
-      { id: 'k3', name: 'Scroll invitation', style: 'Scroll', price: 120 }, { id: 'k4', name: 'WhatsApp video invite', style: 'Digital', price: 2500 }] };
-  }
-  return {};
-}
 
 /** Tools a company gets: those matching the services it offers, plus its own (Enterprise). */
 export function toolsFor(services: { key: string; on: boolean }[], customTools: { id: string; name: string; icon: string; fields: ToolField[] }[] = [], enterprise = false): ToolDef[] {

@@ -9,7 +9,7 @@ import { ActionButton } from '@/components/action-form';
 import { AutoSelect } from '@/components/auto-select';
 import { atLeast, PLANS } from '@/lib/plans';
 import { DELIV_STAGES, type Col, type Tab } from '@/lib/tools';
-import { computePurchase, dishCost, ensureSeeded, loadRows, type Row } from '@/lib/tool-server';
+import { computePurchase, dishCost, loadRows, type Row } from '@/lib/tool-server';
 import { addDays, fmtDate, inr, todayIST } from '@/lib/util';
 import { deleteToolRowAction, savePurchaseListAction, setToolFieldAction } from '../../actions';
 import { ToolRowForm, type RField } from './row-form';
@@ -22,7 +22,6 @@ export default async function ToolPage({ params, searchParams }: { params: Promi
   const tool = ctx.tools.find(t => t.key === key);
   if (!tool) return (<><PageHead title="Service tool" /><div className="body narrow"><div className="notice">This tool is not switched on. Turn on its service in <Link href="/services">My services</Link>.</div></div></>);
   const g = gate(ctx, `tool:${key}`); if (g) return <Gate g={g} plan={ctx.plan} />;
-  await ensureSeeded(ctx, tool);
   const rows = await loadRows(ctx, tool.key);
   const today = todayIST();
   const evs = await ctx.db.select({ id: schema.bookings.id, title: schema.bookings.title, date: schema.bookings.eventDate, guests: schema.bookings.guests }).from(schema.bookings)

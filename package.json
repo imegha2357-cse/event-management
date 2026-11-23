@@ -7,11 +7,14 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "db:apply": "node scripts/apply-schema.mjs"
+    "db:apply": "node scripts/apply-schema.mjs",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
-    "@electric-sql/pglite": "0.5.16",
     "@neondatabase/serverless": "1.2.1",
+    "@opennextjs/cloudflare": "^1.20.18",
     "@types/pg": "8.23.1",
     "bcryptjs": "3.0.3",
     "drizzle-orm": "0.45.4",
@@ -27,6 +30,7 @@
     "@types/node": "22.15.3",
     "@types/react": "19.1.8",
     "@types/react-dom": "19.1.6",
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "wrangler": "^4.166.0"
   }
 }

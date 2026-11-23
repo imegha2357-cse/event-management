@@ -1,16 +1,14 @@
 import Link from 'next/link';
-import { and, asc, desc, eq, gte, ilike, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, ilike, lt, notInArray, or, sql } from 'drizzle-orm';
 import { schema } from '@/db';
 import { requireUser, gate } from '@/lib/session';
 import { PageHead, Empty } from '@/components/page';
 import { Gate } from '@/components/locked';
 import { AutoSelect } from '@/components/auto-select';
 import { fmtDate, fmtTime, inr, bookingNo, todayIST } from '@/lib/util';
-import { BASE_STATUSES, SVC } from '@/lib/catalog';
+import { BASE_STATUSES, NOT_BOOKINGS, SVC } from '@/lib/catalog';
 import { isEnt, LIMITS } from '@/lib/plans';
 import { setBookingStatusAction } from './actions';
-import { DecisionButtons } from '@/components/decision-buttons';
-import { quoteLabel } from '@/lib/docs';
 
 export const metadata = { title: 'Bookings' };
 const VIEWS = [{ k: 'upcoming', l: 'Upcoming' }, { k: 'past', l: 'Past' }, { k: 'all', l: 'All' }];
@@ -28,31 +26,28 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
   const B = schema.bookings, C = schema.customers, today = todayIST();
   const rows = await db.select({ b: B, customer: C.name }).from(B).innerJoin(C, eq(C.id, B.customerId)).where(and(
     eq(B.tenantId, tenant.id),
+    notInArray(B.status, NOT_BOOKINGS),
     view === 'upcoming' ? gte(B.eventDate, today) : view === 'past' ? lt(B.eventDate, today) : undefined,
     status ? eq(B.status, status) : undefined,
     q ? or(ilike(B.title, `%${q}%`), ilike(C.name, `%${q}%`), ilike(B.venue, `%${q}%`)) : undefined,
   )).orderBy(view === 'past' ? desc(B.eventDate) : asc(B.eventDate)).limit(400);
-  const counts = await db.select({ s: B.status, n: sql<number>`count(*)::int` }).from(B).where(eq(B.tenantId, tenant.id)).groupBy(B.status);
+  const counts = await db.select({ s: B.status, n: sql<number>`count(*)::int` }).from(B).where(and(eq(B.tenantId, tenant.id), notInArray(B.status, NOT_BOOKINGS))).groupBy(B.status);
   const cnt = (s: string) => counts.find(c => c.s === s)?.n ?? 0;
   const [{ n: customers }] = await db.select({ n: sql<number>`count(*)::int` }).from(C).where(eq(C.tenantId, tenant.id));
-  const active = counts.filter(c => !['Completed', 'Cancelled', 'Declined'].includes(c.s)).reduce((a, c) => a + c.n, 0);
+  const active = counts.filter(c => !['Completed', 'Cancelled'].includes(c.s)).reduce((a, c) => a + c.n, 0);
   const lim = LIMITS[ctx.plan].events;
-  // Quotations raised for enquiries (accept/decline straight from this list)
-  const forEnq = await db.select({ id: schema.quotations.id, bookingId: schema.quotations.bookingId, status: schema.quotations.status, number: schema.quotations.number, created: schema.quotations.createdAt })
-    .from(schema.quotations).where(and(eq(schema.quotations.tenantId, tenant.id), sql`${schema.quotations.bookingId} is not null`)).orderBy(desc(schema.quotations.createdAt));
-  const quoteFor = (bid: string) => forEnq.find(x => x.bookingId === bid);
   const branches = ent ? custom.branches ?? [] : [];
   const fields = ent ? custom.eventFields ?? [] : [];
   const link = (p: Record<string, string>) => '/bookings?' + new URLSearchParams({ view, ...(status ? { status } : {}), ...(q ? { q } : {}), ...p }).toString();
   return (
     <>
-      <PageHead title="Bookings" sub="Start each event here: customer, date, venue and services. Accepted quotations become bookings automatically."
-        actions={<><Link className="btn" href="/bookings/new?type=enquiry">+ Quick enquiry</Link><Link className="btn primary" href="/bookings/new">+ New booking</Link></>} />
+      <PageHead title="Bookings" sub="Confirmed events only. Accepted quotations become bookings automatically; declined ones never appear here."
+        actions={<Link className="btn primary" href="/bookings/new">+ New booking</Link>} />
       <div className="body">
         {lim !== Infinity && active >= lim - 2 && <div className={active >= lim ? 'formerror' : 'notice warn'}>{active} of {lim} active events used on the Basic plan. <Link href="/settings/plan">See plans</Link></div>}
         <div className="grid4">
-          <div className="kpi"><div className="k">Total events</div><div className="v">{counts.reduce((a, c) => a + c.n, 0)}</div></div>
-          <div className="kpi"><div className="k">Enquiries</div><div className="v">{cnt('Enquiry')}</div></div>
+          <div className="kpi"><div className="k">Total bookings</div><div className="v">{counts.reduce((a, c) => a + c.n, 0)}</div></div>
+          <div className="kpi"><div className="k">Completed</div><div className="v">{cnt('Completed')}</div></div>
           <div className="kpi"><div className="k">Confirmed</div><div className="v">{cnt('Confirmed')}</div></div>
           <div className="kpi"><div className="k">Customers</div><div className="v">{customers}</div></div>
         </div>
@@ -76,11 +71,7 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
                   <td><div className="chips">{(b.services ?? []).map(k => <span key={k} className="chip">{SVC[k]?.name ?? k}</span>)}</div></td>
                   <td><AutoSelect action={setBookingStatusAction} fields={{ rid: b.id }} name="status" value={b.status} options={statuses} label={`Status of ${b.title}`} /></td>
                   <td className="num">{b.total ? inr(b.total) : <span className="muted">—</span>}</td>
-                  <td className="num">{(() => { const q = !b.quotationId ? quoteFor(b.id) : undefined;
-                    if (q && (q.status === 'Draft' || q.status === 'Sent')) return <DecisionButtons quoteId={q.id} status={q.status} label={quoteLabel(tenant, q.number)} />;
-                    if (b.status === 'Declined') return <span className="decided no">✗ Declined</span>;
-                    if (b.quotationId) return <span className="decided ok">✓ Booked</span>;
-                    return <Link className="btn sm" href={`/quotations/new?booking=${b.id}`}>Make quotation</Link>; })()}</td>
+                  <td className="num">{b.quotationId ? <Link className="decided ok" href={`/quotations/${b.quotationId}`}>✓ Accepted</Link> : <span className="muted small">Direct booking</span>}</td>
                 </tr>))}
             </tbody></table></div>)}
         </div>

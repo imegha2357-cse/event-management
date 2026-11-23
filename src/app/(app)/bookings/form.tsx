@@ -16,29 +16,23 @@ export function CustomFieldInputs({ fields, values, prefix = 'cf_' }: { fields: 
     </Field>))}</div>);
 }
 
-export function BookingForm({ customers, services, eventTypes, taken, today, showCrew, branches, eventFields, defaultStatus }: {
+export function BookingForm({ customers, services, eventTypes, taken, today, showCrew, branches, eventFields }: {
   customers: { id: string; name: string; phone: string }[]; services: { key: string; name: string }[]; eventTypes: string[]; taken: { date: string; title: string }[];
-  today: string; showCrew: boolean; branches: { id: string; name: string }[]; eventFields: CF[]; defaultStatus: 'Confirmed' | 'Enquiry';
+  today: string; showCrew: boolean; branches: { id: string; name: string }[]; eventFields: CF[];
 }) {
   const { state, action, onSubmit, pending } = useFormAction(saveBookingAction);
   const fe = state?.fieldErrors ?? {};
   const [cust, setCust] = useState(customers.length ? '' : '__new');
   const [date, setDate] = useState('');
-  const [status, setStatus] = useState(defaultStatus);
   const [picked, setPicked] = useState<string[]>([]);
   const [crew, setCrew] = useState(10);
   const clash = taken.filter(t => t.date === date);
   return (
     <form action={action} onSubmit={onSubmit} noValidate>
-      <input type="hidden" name="status" value={status} />
       <input type="hidden" name="crewNeeded" value={showCrew ? crew : 0} />
       <div className="body narrow">
         <FormMessage state={state} />
         <div className="panel"><div className="panel-b" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div className="field"><span className="label">What is this?</span>
-            <div className="choices" role="radiogroup">
-              {(['Confirmed', 'Enquiry'] as const).map(s => <button type="button" key={s} role="radio" aria-checked={status === s} className={'choice' + (status === s ? ' on' : '')} onClick={() => setStatus(s)}>{s === 'Confirmed' ? 'Confirmed booking' : 'Enquiry (not confirmed yet)'}</button>)}
-            </div></div>
           <div className="grid3">
             <Field label="Customer" htmlFor="customerId" error={fe.customerId} required>
               <select id="customerId" name="customerId" className="input" value={cust} onChange={e => setCust(e.target.value)}>
@@ -77,7 +71,7 @@ export function BookingForm({ customers, services, eventTypes, taken, today, sho
           <CustomFieldInputs fields={eventFields} />
           <Field label="Special notes (optional)" htmlFor="notes"><textarea id="notes" name="notes" rows={2} className="input" placeholder="e.g. Rose theme stage, cook to reach the hall by 2 PM" /></Field>
         </div>
-        <div className="formfoot"><SubmitButton pending={pending} pendingText="Saving…">{status === 'Confirmed' ? 'Confirm booking' : 'Save enquiry'}</SubmitButton><Link href="/bookings" className="btn">Cancel</Link></div>
+        <div className="formfoot"><SubmitButton pending={pending} pendingText="Saving…">Confirm booking</SubmitButton><Link href="/bookings" className="btn">Cancel</Link></div>
         </div>
       </div>
     </form>

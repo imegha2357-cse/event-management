@@ -8,7 +8,6 @@ import { IncomeSpend, lastMonths, monthName } from '@/components/charts';
 import { allowed, has, LIMITS, MODULES, PLANS } from '@/lib/plans';
 import { moneyByBooking, moneyStatus } from '@/lib/money';
 import { monthlyMoney } from '@/lib/finance-data';
-import { weatherFor, wxText } from '@/lib/weather';
 import { quoteLabel } from '@/lib/docs';
 import { fmtDate, inr, todayIST } from '@/lib/util';
 
@@ -22,7 +21,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const { db, tenant, user, tools } = ctx;
   const today = todayIST(), mk = today.slice(0, 7);
   const B = schema.bookings, Q = schema.quotations, C = schema.customers;
-  const all = await db.select({ b: B, customer: C.name }).from(B).innerJoin(C, eq(C.id, B.customerId)).where(and(eq(B.tenantId, tenant.id), sql`${B.status} not in ('Cancelled','Declined')`));
+  const all = await db.select({ b: B, customer: C.name }).from(B).innerJoin(C, eq(C.id, B.customerId)).where(and(eq(B.tenantId, tenant.id), sql`${B.status} not in ('Cancelled','Declined','Enquiry')`));
   const upcoming = all.filter(x => x.b.eventDate >= today).sort((a, b) => a.b.eventDate.localeCompare(b.b.eventDate));
   const next30 = upcoming.filter(x => daysUntil(x.b.eventDate, today) <= 30).length;
   const money = await moneyByBooking(ctx);
@@ -41,7 +40,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   if (has(tenant, 'staff')) upcoming.filter(x => x.b.crewNeeded).forEach(x => { const c = crewCounts.find(r => r.id === x.b.id)?.n ?? 0; if (c < x.b.crewNeeded) notes.push(['warn', `${x.b.crewNeeded - c} more crew needed for ${x.b.title}`, `/bookings/${x.b.id}`]); });
   sent.forEach(({ q, customer }) => notes.push(['info', `Quotation ${quoteLabel(tenant, q.number)} sent to ${customer}, waiting for reply`, `/quotations/${q.id}`]));
   if (overdue[0]?.n) notes.push(['warn', `${overdue[0].n} planning task${overdue[0].n > 1 ? 's are' : ' is'} overdue`, '/services/tools/planning']);
-  const wx = await weatherFor(tenant.city);
   const calKey = /^\d{4}-\d{2}$/.test(sp.cal ?? '') ? sp.cal! : mk;
   const [cy, cm] = calKey.split('-').map(Number);
   const startPad = (new Date(Date.UTC(cy, cm - 1, 1)).getUTCDay() + 6) % 7, nDays = new Date(Date.UTC(cy, cm, 0)).getUTCDate();
@@ -64,7 +62,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <div className="kpi"><div className="k">Pending payments</div><div className="v">{inr(pending)}</div><div className="s">Across {owing} client{owing === 1 ? '' : 's'}</div></div>
             <div className="kpi"><div className="k">Net profit</div><div className="v">{inr(mm.income(mk) - mm.spend(mk))}</div><div className="s">This month (received − spent)</div></div>
           </> : <>
-            <div className="kpi"><div className="k">Enquiries</div><div className="v">{all.filter(x => x.b.status === 'Enquiry').length}</div></div>
+            <div className="kpi"><div className="k">Completed</div><div className="v">{all.filter(x => x.b.status === 'Completed').length}</div></div>
             <div className="kpi"><div className="k">Quotations waiting</div><div className="v">{sent.length}</div></div>
             <div className="kpi"><div className="k">Confirmed</div><div className="v">{all.filter(x => x.b.status === 'Confirmed').length}</div></div>
           </>}
@@ -77,16 +75,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 <div className="moneyrow" key={b.id} style={{ gridTemplateColumns: '64px minmax(0,1fr) auto' }}>
                   <div style={{ textAlign: 'center' }}><b style={{ fontSize: 18 }}>{b.eventDate.slice(8)}</b><div className="small muted">{MON[+b.eventDate.slice(5, 7) - 1]}</div></div>
                   <div><Link className="strong" href={`/bookings/${b.id}`}>{b.title}</Link><div className="small muted">{b.eventType} · {b.guests} guests · {customer}</div></div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>{b.status === 'Enquiry' ? <Badge s="Enquiry" /> : <><span className="num">{m.quote ? inr(m.quote) : ''}</span><span className={`badge ${moneyStatus(m)}`}>{moneyStatus(m)}</span></>}</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><span className="num">{m.quote ? inr(m.quote) : ''}</span><span className={`badge ${moneyStatus(m)}`}>{moneyStatus(m)}</span></div>
                 </div>); })}
             </div>
             {showMoney && <div className="panel"><div className="panel-h"><div><h2>Income vs spending</h2><div className="small muted">Monthly cash flow · {monthName(months6[0])} to {monthName(mk)}</div></div></div>
               <div className="panel-b"><IncomeSpend months={months6} income={months6.map(mm.income)} spend={months6.map(mm.spend)} /></div></div>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {wx && <div className="wx"><div className="wxtop"><span>{tenant.city.toUpperCase()} · TODAY</span><span>Live</span></div>
-              <div className="wxmain"><b>{wx.temp}°</b><div><div>{wxText(wx.code)}</div><div className="wxs">Feels like {wx.feels}°</div></div></div>
-              <div className="wxs">Humidity {wx.hum}% · Wind {wx.wind} km/h · Rain {wx.rain}%</div></div>}
             <div className="panel"><div className="panel-h"><h3>Notifications</h3><span className="badge info">{notes.length} new</span></div><div className="panel-b">
               <ul className="notes">{notes.length ? notes.slice(0, 6).map(([k, s, href], i) => <li key={i}><span className={`nd ${k}`} />{href ? <Link href={href}>{s}</Link> : s}</li>) : <li className="muted">All clear. Nothing needs your attention.</li>}</ul></div></div>
             <div className="panel"><div className="panel-h"><h3>{monthName(calKey)}</h3><div style={{ display: 'flex', gap: 2 }}><Link className="btn sm" href={`/dashboard?cal=${shift(-1)}`} aria-label="Previous month">‹</Link><Link className="btn sm" href={`/dashboard?cal=${shift(1)}`} aria-label="Next month">›</Link></div></div>

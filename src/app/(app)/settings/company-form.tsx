@@ -25,7 +25,7 @@ export function CompanyForm({ t, swatches, styles, designs, anyColour }: { t: T;
         <div className="grid2">
           <Field label="Company name" htmlFor="name" error={fe.name} required><input id="name" name="name" className="input" defaultValue={t.name} /></Field>
           <Field label="Business phone" htmlFor="phone" error={fe.phone} required><input id="phone" name="phone" className="input" defaultValue={t.phone} /></Field>
-          <Field label="City" htmlFor="city" error={fe.city} required hint="Used for the weather on your dashboard."><input id="city" name="city" className="input" defaultValue={t.city} /></Field>
+          <Field label="City" htmlFor="city" error={fe.city} required><input id="city" name="city" className="input" defaultValue={t.city} /></Field>
           <Field label="GSTIN (leave empty if not registered)" htmlFor="gstin" error={fe.gstin}><input id="gstin" name="gstin" className="input" defaultValue={t.gstin} maxLength={15} /></Field>
         </div>
         <Field label="Address" htmlFor="address" error={fe.address}><textarea id="address" name="address" rows={2} className="input" defaultValue={t.address} /></Field>

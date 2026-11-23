@@ -1,8 +1,9 @@
+import os
 import json, re, sys, time, urllib.request
 from datetime import date, timedelta
 from playwright.sync_api import sync_playwright, expect
 
-BASE = "http://localhost:3100"; MOCK = "http://127.0.0.1:3999"
+BASE = os.environ.get("BASE", "http://localhost:3100"); MOCK = "http://127.0.0.1:3999"
 def mock(path, data=None):
     req = urllib.request.Request(MOCK + path, data=(data.encode() if data is not None else None), method="POST" if data is not None else "GET")
     return json.loads(urllib.request.urlopen(req).read() or b"null")
@@ -246,7 +247,7 @@ with sync_playwright() as p:
     go(page, BASE + "/dashboard"); check("logged out is redirected", "/login" in page.url)
     go(page, BASE + "/forgot-password"); page.fill("#email", email); page.click("button:has-text('Send reset link')")
     page.wait_for_selector("text=If an account exists"); check("forgot shows generic message", True)
-    nl = open("/tmp/next.log").read(); m = re.findall(r"reset-password\?token=([\w-]+)", nl)
+    nl = open(os.environ.get("APPLOG", "/tmp/next.log"), errors="ignore").read(); m = re.findall(r"reset-password\?token=([\w-]+)", nl)
     go(page, BASE + "/reset-password?token=" + m[-1]); page.fill("#password", "NewSecret456"); page.fill("#confirm", "NewSecret45"); page.click("button:has-text('Set new password')")
     page.wait_for_selector("text=The passwords do not match."); page.fill("#confirm", "NewSecret456"); page.click("button:has-text('Set new password')")
     wait_url(page, "**/login?reset=1"); check("reset done", True)

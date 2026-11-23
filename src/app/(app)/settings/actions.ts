@@ -235,20 +235,3 @@ export async function deleteVendorAction(_: ActionState, fd: FormData): Promise<
   return { ok: true };
 }
 
-/* ---------------- Demo data ---------------- */
-export async function loadDemoAction(): Promise<ActionState> {
-  const { ctx, error } = await ownerOnly(); if (error) return { error };
-  const { demoLoaded, loadDemo } = await import('@/lib/demo');
-  if (await demoLoaded(ctx)) return { error: 'Demo data is already loaded. Remove it first if you want to load it again.' };
-  await loadDemo(ctx);
-  revalidatePath('/', 'layout');
-  return { ok: true, message: 'Demo data added: 15 customers, bookings, quotations, vendors, expenses, staff and tool entries, plus invoices and payments.' };
-}
-export async function removeDemoAction(): Promise<ActionState> {
-  const { ctx, error } = await ownerOnly(); if (error) return { error };
-  const { removeDemo } = await import('@/lib/demo');
-  await removeDemo(ctx);
-  await logActivity(ctx, 'Removed demo data');
-  revalidatePath('/', 'layout');
-  return { ok: true, message: 'Demo data removed. Your own entries are untouched.' };
-}

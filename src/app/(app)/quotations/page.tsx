@@ -24,25 +24,21 @@ export default async function Quotations({ searchParams }: { searchParams: Promi
     .where(and(eq(Q.tenantId, tenant.id), status === 'All' ? undefined : eq(Q.status, status))).orderBy(desc(Q.createdAt)).limit(300);
   const linked = await db.select({ id: schema.bookings.id, q: schema.bookings.quotationId }).from(schema.bookings).where(eq(schema.bookings.tenantId, tenant.id));
   const bookingOf = new Map(linked.filter(x => x.q).map(x => [x.q!, x.id]));
-  const invs = await db.select({ id: schema.invoices.id, b: schema.invoices.bookingId }).from(schema.invoices).where(eq(schema.invoices.tenantId, tenant.id));
-  const invOf = new Map([...bookingOf].map(([qid, bid]) => [qid, invs.find(i => i.b === bid)?.id]).filter(x => x[1]) as [string, string][]);
   return (
     <>
-      <PageHead title="Quotations" actions={<Link className="btn primary" href="/quotations/new">+ New quotation</Link>} />
+      <PageHead title="Quotations" sub="Accept moves the quotation into Bookings as a confirmed event. Declined quotations stay here and never appear in Bookings." actions={<Link className="btn primary" href="/quotations/new">+ New quotation</Link>} />
       <div className="body">
         <div className="seg" role="tablist" aria-label="Filter by status">
           {FILTERS.map(f => <Link key={f} role="tab" aria-selected={f === status} className={f === status ? 'on' : ''} href={f === 'All' ? '/quotations' : `/quotations?status=${f}`}>{f} ({count(f)})</Link>)}
         </div>
         <div className="panel">
           {rows.length === 0 ? <Empty title={status === 'All' ? 'No quotations yet' : `No ${status.toLowerCase()} quotations`}>{status === 'All' && <Link href="/quotations/new">Create your first quotation</Link>}</Empty> : (
-            <div className="tablewrap"><table><thead><tr><th>Number</th><th>Customer</th><th>Event</th><th>Event date</th><th>Valid until</th><th>Status</th><th className="num">Amount</th><th>Customer decision</th><th /></tr></thead><tbody>
+            <div className="tablewrap"><table><thead><tr><th>Number</th><th>Customer</th><th>Event</th><th>Event date</th><th>Valid until</th><th>Status</th><th className="num">Amount</th><th>Accept / Decline</th></tr></thead><tbody>
               {rows.map(({ q, customer }) => (
                 <tr key={q.id}><td><Link className="strong" href={`/quotations/${q.id}`}>{quoteLabel(tenant, q.number)}</Link></td><td>{customer}</td>
                   <td>{q.eventTitle}<div className="small muted">{q.eventType}</div></td><td className="nowrap">{fmtDate(q.eventDate)}</td><td className="nowrap">{fmtDate(q.validUntil)}</td>
                   <td><Badge s={q.status} /></td><td className="num">{inr(q.total)}</td>
-                  <td><DecisionButtons quoteId={q.id} status={q.status} label={quoteLabel(tenant, q.number)} bookingId={bookingOf.get(q.id)} /></td>
-                  <td className="num"><div className="rowacts"><Link className="btn sm" href={`/quotations/${q.id}`}>View</Link><Link className="btn sm" href={`/quotations/${q.id}?print=1`}>Print</Link>
-                    {invOf.get(q.id) && <Link className="btn sm" href={`/invoices/${invOf.get(q.id)}`}>Invoice</Link>}</div></td></tr>))}
+                  <td><DecisionButtons quoteId={q.id} status={q.status} label={quoteLabel(tenant, q.number)} bookingId={bookingOf.get(q.id)} /></td></tr>))}
             </tbody></table></div>)}
         </div>
       </div>

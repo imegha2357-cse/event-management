@@ -1,10 +1,11 @@
+import os
 """End-to-end test for EventDesk v2 (plans, admin, invoices, finance, tools, team, customize).
 Needs: app on :3100 (production build, EVENTDESK_TEST=1), mock WhatsApp on :3999, local Postgres on :5433."""
 import base64, json, re, subprocess, sys, time, urllib.request
 from datetime import date, timedelta
 from playwright.sync_api import sync_playwright
 
-BASE = "http://localhost:3100"; MOCK = "http://127.0.0.1:3999"
+BASE = os.environ.get("BASE", "http://localhost:3100"); MOCK = "http://127.0.0.1:3999"
 results, console_errors = [], []
 
 def mock(path, data=None):
@@ -100,7 +101,9 @@ with sync_playwright() as p:
     go(page, f"/quotations/{qid}")
     check("accepting created the invoice automatically", page.locator("a:has-text('Invoice SLE/')").count() == 1 and "Invoice created" in page.inner_text(".timeline"), page.inner_text("body")[:600])
     bid = page.locator("a[href^='/bookings/']").first.get_attribute("href").split("/bookings/")[1]
-    go(page, "/quotations"); check("quotations list has View, Print and Invoice buttons", page.locator(f"tr:has-text('Priya & Arun wedding') a:has-text('Print')").count() == 1 and page.locator(f"tr:has-text('Priya & Arun wedding') a:has-text('Invoice')").count() == 1)
+    go(page, "/quotations"); qrow = page.locator("tr:has-text('Priya & Arun wedding')")
+    check("quotations list row: only the decision, no View/Print/Invoice buttons", qrow.locator(".decided.ok").count() == 1 and qrow.locator("a.btn, button").count() == 0, qrow.inner_text())
+    go(page, "/bookings?view=all"); check("accepted quotation is in Bookings", page.locator("tbody tr:has-text('Priya & Arun wedding')").count() == 1)
     go(page, "/invoices"); check("invoices list has View and Print", page.locator("tr:has-text('Priya Kumar') a:has-text('View')").count() == 1 and page.locator("tr:has-text('Priya Kumar') a:has-text('Print')").count() == 1)
     page.locator("tr:has-text('Priya Kumar') a:has-text('View')").click(); wait_url(page, re.compile(r"/invoices/[0-9a-f-]{36}$"))
     inv_id = page.url.split("/invoices/")[1].split("?")[0]
@@ -131,22 +134,29 @@ with sync_playwright() as p:
     go(page, "/finance/compare"); check("compare shows best margin insight", "earned the best margin" in page.inner_text("body"), page.inner_text(".body"))
     go(page, "/calendar?m=" + future[:7]); check("calendar (Pro) shows booking", page.locator("a.ev:has-text('Priya & Arun wedding')").count() == 1)
 
-    # ---------- Bookings: enquiry, date clash, quotation for enquiry ----------
-    go(page, "/bookings/new?type=enquiry")
+    # ---------- Bookings: confirmed only, date clash ----------
+    go(page, "/bookings"); check("no Quick enquiry button", page.locator("a:has-text('Quick enquiry')").count() == 0)
+    check("status filters are booking statuses only", "Enquiry" not in page.inner_text(".seg >> nth=1") and "Declined" not in page.inner_text(".seg >> nth=1"), page.inner_text(".seg >> nth=1"))
+    go(page, "/bookings/new"); check("new booking has no enquiry option", page.locator("text=Enquiry (not confirmed yet)").count() == 0)
     page.select_option("#customerId", "__new"); page.fill("#newName", "Ravi Shankar"); page.fill("#newPhone", "9123456780")
     page.fill("#eventDate", future)
     check("date clash warning", page.locator("text=already has Priya & Arun wedding").is_visible())
     page.click("label.choice:has-text('Photography')")
-    page.click("button:has-text('Save enquiry')"); wait_url(page, re.compile(r"/bookings/[0-9a-f-]{36}\?saved=1"))
-    enq = page.url.split("/bookings/")[1].split("?")[0]
-    check("enquiry saved", "ENQUIRY" in page.inner_text(".pagehead").upper())
-    page.click("a:has-text('Make quotation')"); wait_url(page, re.compile(r"/quotations/new\?booking="))
-    check("quotation prefilled from enquiry services", page.input_value("input[aria-label='Item 1 description']").startswith("Photography"))
-    page.fill("#venue", "Hotel Cenneys, Salem"); page.click("button:has-text('Save quotation')"); wait_url(page, re.compile(r"/quotations/[0-9a-f-]{36}\?created=1"))
-    page.click("button:has-text('Mark accepted')"); wait_url(page, re.compile(r"/bookings/[0-9a-f-]{36}\?new=1"))
-    check("accepting confirms the same enquiry (no duplicate)", page.url.split("/bookings/")[1].split("?")[0] == enq and "CONFIRMED" in page.inner_text(".pagehead").upper())
+    page.click("button:has-text('Confirm booking')"); wait_url(page, re.compile(r"/bookings/[0-9a-f-]{36}\?saved=1"))
+    check("direct booking saved as Confirmed", "CONFIRMED" in page.inner_text(".pagehead").upper())
+    opts = page.locator("select[aria-label='Booking status'] option").all_inner_texts()
+    check("booking status choices exclude Enquiry/Declined", "Enquiry" not in opts and "Declined" not in opts, opts)
 
-    # ---------- Service tools ----------
+    # ---------- Service tools (start empty: no starter contents) ----------
+    go(page, "/services/tools/catering?tab=ingredients"); check("ingredient master starts empty", page.locator("tbody tr").count() == 0, page.inner_text(".body")[:300])
+    page.click("summary:has-text('+ Add ingredient')"); page.fill("#f_name", "Ponni rice"); page.select_option("#f_cat", "Grocery"); page.select_option("#f_unit", "kg"); page.fill("#f_rate", "60")
+    page.click("button:has-text('Add ingredient')"); page.wait_for_selector("text=Ingredient added."); settle(page)
+    go(page, "/services/tools/catering?tab=dishes"); check("recipe master starts empty", page.locator("tbody tr").count() == 0)
+    for dish, price in [("White rice", "30"), ("Sambar", "40"), ("Semiya payasam", "45")]:
+        go(page, "/services/tools/catering?tab=dishes"); page.click("summary:has-text('+ Add dish')")
+        page.fill("#f_name", dish); page.fill("#f_price", price)
+        if dish == "White rice": pick(page, "select[aria-label='Item 1']", "Ponni rice"); page.fill("input[aria-label='Quantity 1']", "12")
+        page.click("button:has-text('Add dish')"); page.wait_for_selector("text=Dish added."); settle(page)
     go(page, "/services/tools/catering?tab=menus")
     page.click("summary:has-text('+ Plan a menu')")
     pick(page, "#f_eventId", "Priya & Arun wedding")
@@ -162,7 +172,7 @@ with sync_playwright() as p:
     pick(page, "select[aria-label='Event for the standard checklist']", "Priya & Arun wedding")
     page.click("button:has-text('Add standard checklist')"); page.wait_for_selector("text=10 tasks added")
     settle(page); page.reload(); check("checklist tasks listed", page.locator("tbody tr").count() == 10)
-    go(page, "/services/tools/decor?tab=items"); check("decor stock seeded (Pro tab)", "Chiavari chairs" in page.inner_text("tbody"))
+    go(page, "/services/tools/decor?tab=items"); check("decor stock starts empty (Pro tab)", "Chiavari chairs" not in page.inner_text(".body"))
 
     # ---------- Staff (Pro) with wage payment added to event expenses ----------
     go(page, "/staff")
@@ -209,11 +219,11 @@ with sync_playwright() as p:
     # ---------- Second company: Basic limit, isolation, suspension ----------
     b = newp(); signup(b, "Babu", BCO, Bm)
     for i in range(10):
-        go(b, "/bookings/new?type=enquiry")
+        go(b, "/bookings/new")
         if i == 0: b.select_option("#customerId", "__new"); b.fill("#newName", "Kumar Family"); b.fill("#newPhone", "9345678901")
         else: pick(b, "#customerId", "Kumar Family")
-        b.fill("#eventDate", future); b.fill("#title", f"Enquiry {i + 1}")
-        b.click("button:has-text('Save enquiry')"); wait_url(b, re.compile(r"/bookings/[0-9a-f-]{36}\?saved=1"))
+        b.fill("#eventDate", future); b.fill("#title", f"Event {i + 1}")
+        b.click("button:has-text('Confirm booking')"); wait_url(b, re.compile(r"/bookings/[0-9a-f-]{36}\?saved=1"))
     go(b, "/bookings/new"); check("Basic limit of 10 active events enforced", "allows 10 active events" in b.inner_text("body"))
     go(b, f"/bookings/{bid}"); check("other company cannot see the booking", "Page not found" in b.inner_text("body"))
     go(b, f"/invoices/{inv_id}"); check("other company cannot see the invoice", "Page not found" in b.inner_text("body"))

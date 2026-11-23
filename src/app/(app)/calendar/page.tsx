@@ -22,13 +22,13 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
   const g = gate(ctx, 'calendar'); if (g) return <Gate g={g} plan={ctx.plan} />;
   const { db, tenant } = ctx;
   const B = schema.bookings;
-  const events = await db.select().from(B).where(and(eq(B.tenantId, tenant.id), notInArray(B.status, ['Cancelled', 'Declined']), gte(B.eventDate, gridStart), lte(B.eventDate, gridEnd))).orderBy(asc(B.eventDate), asc(B.startTime));
+  const events = await db.select().from(B).where(and(eq(B.tenantId, tenant.id), notInArray(B.status, ['Cancelled', 'Declined', 'Enquiry']), gte(B.eventDate, gridStart), lte(B.eventDate, gridEnd))).orderBy(asc(B.eventDate), asc(B.startTime));
   const prev = iso(y, m - 2, 1).slice(0, 7), next = iso(y, m, 1).slice(0, 7);
   const days = Array.from({ length: 42 }, (_, i) => iso(y, m - 1, 1 - startOffset + i));
   const monthCount = events.filter(e => e.eventDate.slice(0, 7) === `${y}-${String(m).padStart(2, '0')}`).length;
   return (
     <>
-      <PageHead title={`${MONTHS[m - 1]} ${y}`} sub={`${monthCount} event${monthCount === 1 ? '' : 's'} this month · confirmed in your colour, enquiries in amber`}
+      <PageHead title={`${MONTHS[m - 1]} ${y}`} sub={`${monthCount} event${monthCount === 1 ? '' : 's'} this month`}
         actions={<><Link className="btn" href={`/calendar?m=${prev}`} aria-label="Previous month">‹</Link><Link className="btn" href="/calendar">Today</Link><Link className="btn" href={`/calendar?m=${next}`} aria-label="Next month">›</Link></>} />
       <div className="body">
         <div className="cal">
@@ -36,7 +36,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
           {days.map(d => (
             <div key={d} className={(d.slice(5, 7) !== String(m).padStart(2, '0') ? 'out ' : '') + (d === today ? 'today' : '')}>
               <span className="d">{Number(d.slice(8))}</span>
-              {events.filter(e => e.eventDate === d).map(e => <Link key={e.id} className={'ev' + (e.status === 'Enquiry' ? ' enq' : '')} href={`/bookings/${e.id}`} title={e.title}>{e.startTime ? fmtTime(e.startTime) + ' ' : ''}{e.title}</Link>)}
+              {events.filter(e => e.eventDate === d).map(e => <Link key={e.id} className="ev" href={`/bookings/${e.id}`} title={e.title}>{e.startTime ? fmtTime(e.startTime) + ' ' : ''}{e.title}</Link>)}
             </div>))}
         </div>
       </div>
