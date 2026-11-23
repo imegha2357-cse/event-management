@@ -58,6 +58,7 @@ Use the **Workers Paid** plan ($5/month): the free plan's 10 ms CPU limit is too
 
 **From GitHub (recommended):** Cloudflare dashboard → Workers & Pages → Create → Import a repository → pick this repo.
 Build command `npx opennextjs-cloudflare build`, deploy command `npx opennextjs-cloudflare deploy`.
+The Worker name in `wrangler.jsonc` must match the Worker's name in Cloudflare (`event-management`), and `AUTH_URL` there must be its address.
 Then add the variables below under the Worker's Settings → Variables and Secrets (as *Secret* for passwords and keys) and redeploy.
 
 **From your computer:** `npx wrangler login`, then `npx wrangler secret put DATABASE_URL` (and the other secrets), then `npm run cf:deploy`.

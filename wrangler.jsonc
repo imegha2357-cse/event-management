@@ -1,18 +1,21 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "eventdesk",
+  "name": "event-management",
   // Our wrapper: serves the Next.js app and runs the daily WhatsApp retry (see worker.ts).
   "main": "worker.ts",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
-  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "eventdesk" }],
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "event-management" }],
   // 09:00 India time every day: retry WhatsApp messages that failed.
   "triggers": { "crons": ["30 3 * * *"] },
   "observability": { "enabled": true },
   // Plain settings. Secrets (DATABASE_URL, AUTH_SECRET, AUTH_GOOGLE_SECRET, WHATSAPP_TOKEN, CRON_SECRET, …)
   // are added with `npx wrangler secret put NAME` or in the Cloudflare dashboard, never here.
+  // Keep any plain-text variables added in the dashboard when deploying.
+  "keep_vars": true,
   "vars": {
+    "AUTH_URL": "https://event-management.imegha2357.workers.dev",
     "WHATSAPP_TEMPLATE_NAME": "booking_confirmation",
     "WHATSAPP_TEMPLATE_LANG": "en"
   }
