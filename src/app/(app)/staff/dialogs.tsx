@@ -86,7 +86,7 @@ function PayForm({ staffId, name, balance, today, events, onDone }: { staffId: s
           <Field label="Amount (₹)" htmlFor={`amt-${staffId}`} error={fe.amount} required><input id={`amt-${staffId}`} name="amount" type="number" min={1} className="input" defaultValue={balance > 0 ? balance : ''} /></Field>
           <Field label="Paid on" htmlFor={`on-${staffId}`} error={fe.paidOn} required><input id={`on-${staffId}`} name="paidOn" type="date" max={today} className="input" defaultValue={today} /></Field>
         </div>
-        {events.length > 0 && <Field label="For which event? (adds it to that event’s expenses)" htmlFor={`ev-${staffId}`}><select id={`ev-${staffId}`} name="bookingId" className="input" defaultValue=""><option value="">— Not linked to an event —</option>{events.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>}
+        {events.length > 0 && <Field label="For which event? (adds it to that event’s expenses)" htmlFor={`ev-${staffId}`}><select id={`ev-${staffId}`} name="bookingId" className="input" defaultValue=""><option value="">Not linked to an event</option>{events.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>}
         <Field label="Note" htmlFor={`note-${staffId}`} error={fe.note}><input id={`note-${staffId}`} name="note" className="input" placeholder="e.g. Cash, UPI" /></Field>
       </div>
       <div className="formfoot" style={{ justifyContent: 'flex-end' }}>

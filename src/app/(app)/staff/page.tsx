@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Icon } from '@/components/icons';
 import { and, asc, desc, eq, ne, sql } from 'drizzle-orm';
 import { schema } from '@/db';
 import { requireUser, gate } from '@/lib/session';
@@ -45,7 +46,7 @@ export default async function Staff() {
   const onDutyToday = todays.length, presentToday = todays.filter(t => t.present).length;
 
   const attendance = (r: Row) => r.todayCrewId
-    ? <ActionButton action={togglePresentAction} fields={{ rid: r.todayCrewId, present: String(!r.todayPresent) }} className={'btn sm' + (r.todayPresent ? ' good' : '')} label={r.todayPresent ? '✓ Present' : 'Mark present'} />
+    ? <ActionButton action={togglePresentAction} fields={{ rid: r.todayCrewId, present: String(!r.todayPresent) }} className={'btn sm' + (r.todayPresent ? ' good' : '')} label={r.todayPresent ? <><Icon name="check" size={14} /> Present</> : 'Mark present'} />
     : <span className="muted small">Not on duty today</span>;
 
   return (
@@ -93,7 +94,7 @@ export default async function Staff() {
         </div>
         <div className="panel"><div className="panel-h"><h2>Recent wage payments</h2></div>
           {payments.length === 0 ? <Empty title="No payments recorded yet" /> : <table><thead><tr><th>Date</th><th>Paid to</th><th>Note</th><th className="num">Amount</th></tr></thead><tbody>
-            {payments.map(({ p, name }) => <tr key={p.id}><td className="nowrap">{fmtDate(p.paidOn)}</td><td>{name}</td><td>{p.note || <span className="muted">—</span>}</td><td className="num">{inr(p.amount)}</td></tr>)}
+            {payments.map(({ p, name }) => <tr key={p.id}><td className="nowrap">{fmtDate(p.paidOn)}</td><td>{name}</td><td>{p.note || <span className="muted">-</span>}</td><td className="num">{inr(p.amount)}</td></tr>)}
           </tbody></table>}
         </div>
         <p className="small muted">Assign crews to events from each booking’s page. <Link href="/bookings">Go to bookings</Link></p>

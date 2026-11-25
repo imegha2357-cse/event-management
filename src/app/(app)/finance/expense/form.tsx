@@ -46,7 +46,7 @@ export function ExpenseForm({ events, selected, today, vendors }: { events: Ev[]
         </div>
         <div className="grid2">
           <Field label="Paid to (optional)" htmlFor="paidTo"><input id="paidTo" name="paidTo" className="input" placeholder="e.g. Green Petal Flowers" /></Field>
-          {vendors.length > 0 && <Field label="Vendor (optional)" htmlFor="vendorId"><select id="vendorId" name="vendorId" className="input"><option value="">—</option>{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</select></Field>}
+          {vendors.length > 0 && <Field label="Vendor (optional)" htmlFor="vendorId"><select id="vendorId" name="vendorId" className="input"><option value="">None</option>{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</select></Field>}
         </div>
         <div className="field"><span className="label">How did you pay?</span><div className="choices">{['Cash', 'UPI', 'Bank transfer'].map(c => <button type="button" key={c} className={'choice' + (mode === c ? ' on' : '')} aria-pressed={mode === c} onClick={() => setMode(c)}>{c}</button>)}</div></div>
         <div className="field"><span className="label">Bill photo (optional)</span>

@@ -13,7 +13,7 @@ function Multi({ name, options }: { name: string; options: [string, string][] })
 function Rows({ name, options }: { name: string; options: [string, string][] }) {
   const [n, setN] = useState(3);
   return (<div className="rowsfield">{Array.from({ length: n }, (_, i) => (
-    <div className="r" key={i}><select name={`${name}_ref_${i}`} className="input" aria-label={`Item ${i + 1}`} defaultValue=""><option value="">—</option>{options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+    <div className="r" key={i}><select name={`${name}_ref_${i}`} className="input" aria-label={`Item ${i + 1}`} defaultValue=""><option value="">None</option>{options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
       <input name={`${name}_qty_${i}`} type="number" min={0} step="any" className="input" style={{ width: 110 }} placeholder="Qty" aria-label={`Quantity ${i + 1}`} /></div>))}
     {n < 8 && <button type="button" className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => setN(x => x + 1)}>+ Another</button>}</div>);
 }
@@ -35,7 +35,7 @@ export function ToolRowForm({ tool, coll, noun, add, fields }: { tool: string; c
           <div className="grid3">{fields.filter(f => f.type !== 'multi' && f.type !== 'rows').map(f => (
             <Field key={f.f} label={f.label} htmlFor={'f_' + f.f} error={fe['f_' + f.f]} required={f.req}>
               {f.type === 'select' || f.type === 'event'
-                ? <select id={'f_' + f.f} name={'f_' + f.f} className="input" defaultValue={String(f.def ?? '')}><option value="">{f.type === 'event' ? 'Choose an event…' : '—'}</option>{(f.options ?? []).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+                ? <select id={'f_' + f.f} name={'f_' + f.f} className="input" defaultValue={String(f.def ?? '')}><option value="">{f.type === 'event' ? 'Choose an event…' : 'None'}</option>{(f.options ?? []).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
                 : <input id={'f_' + f.f} name={'f_' + f.f} className="input" placeholder={f.ph} defaultValue={f.def === undefined ? undefined : String(f.def)}
                   type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : f.type === 'time' ? 'time' : 'text'} min={f.type === 'number' ? 0 : undefined} step={f.type === 'number' ? 'any' : undefined} />}
             </Field>))}</div>

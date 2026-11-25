@@ -11,7 +11,7 @@ export function ReportFrame({ tenant, title, about, kind, range, asOf, print, ch
   tenant: Tenant; title: string; about: string; kind: string; range: Range; asOf?: boolean; print?: boolean; children: React.ReactNode;
 }) {
   const ps = presets();
-  const period = range.preset === 'all' ? 'All time' : `${fmtDate(range.from)} – ${fmtDate(range.to)}`;
+  const period = range.preset === 'all' ? 'All time' : `${fmtDate(range.from)} to ${fmtDate(range.to)}`;
   return (
     <div className="report-page">
       <AutoPrint on={!!print} />

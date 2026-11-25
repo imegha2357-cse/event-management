@@ -28,7 +28,7 @@ export function DocPaper({ kind, tenant, customer, ev, no, date, validUntil, ite
       <div className="meta">
         <div><div className="lbl">{kind === 'quote' ? 'Prepared for' : 'Bill to'}</div><div><b>{customer.name}</b></div><div className="small muted">{customer.phone}{customer.city ? ` · ${customer.city}` : ''}</div></div>
         {ev && <div><div className="lbl">Event</div><div><b>{ev.title}</b>{ev.type && <span className="muted"> ({ev.type})</span>}</div>
-          <div className="small">{fmtDate(ev.date)}{ev.startTime ? ` · ${fmtTime(ev.startTime)}${ev.endTime ? '–' + fmtTime(ev.endTime) : ''}` : ''}</div>
+          <div className="small">{fmtDate(ev.date)}{ev.startTime ? ` · ${fmtTime(ev.startTime)}${ev.endTime ? ' to ' + fmtTime(ev.endTime) : ''}` : ''}</div>
           <div className="small muted">{ev.venue}{ev.guests ? ` · ${ev.guests} guests` : ''}</div></div>}
       </div>
       <table><thead><tr><th>#</th><th>Description</th><th className="num">Qty</th><th className="num">Rate</th><th className="num">Amount</th></tr></thead>

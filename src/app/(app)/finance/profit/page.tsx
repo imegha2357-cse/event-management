@@ -37,12 +37,12 @@ export default async function Profit() {
         <div className="tablewrap"><table><thead><tr><th>Event</th><th className="num">Income</th><th /><th className="num">Expenses</th><th className="num">Profit</th><th className="num">Margin</th></tr></thead><tbody>
           {rows.map(r => <tr key={r.b.id}><td><Link className="strong" href={`/bookings/${r.b.id}`}>{r.b.title}</Link><div className="small muted">{fmtDate(r.b.eventDate)}</div></td><td className="num">{inr(r.inc)}</td>
             <td style={{ width: '22%' }}><div className="bar"><i style={{ width: `${(r.inc / max) * 100}%` }} /></div></td><td className="num">{inr(r.exp)}</td><td className="num"><b>{inr(r.profit)}</b></td>
-            <td className="num">{r.inc ? `${Math.round((r.profit / r.inc) * 100)}%` : '—'}</td></tr>)}
+            <td className="num">{r.inc ? `${Math.round((r.profit / r.inc) * 100)}%` : '-'}</td></tr>)}
         </tbody></table></div>)}</div>
       <div className="panel"><div className="panel-h"><h2>Expense entries</h2></div>{exps.length === 0 ? <Empty title="No expenses recorded" /> : (
         <div className="tablewrap"><table><thead><tr><th>Date</th><th>Event</th><th>Category</th><th>What for</th><th>Bill</th><th className="num">Amount</th><th /></tr></thead><tbody>
           {exps.map(({ x, title }) => <tr key={x.id}><td className="nowrap">{fmtDate(x.spentOn)}</td><td>{title}</td><td>{x.category}</td><td>{x.item}<div className="small muted">{x.paidTo}{x.source === 'staff' ? ' · from staff wages' : ''}</div></td>
-            <td>{x.bill ? <a href={x.bill} target="_blank" rel="noopener noreferrer"><img src={x.bill} alt={`Bill for ${x.item}`} className="billthumb" style={{ maxWidth: 60, maxHeight: 60 }} /></a> : <span className="muted">—</span>}</td>
+            <td>{x.bill ? <a href={x.bill} target="_blank" rel="noopener noreferrer"><img src={x.bill} alt={`Bill for ${x.item}`} className="billthumb" style={{ maxWidth: 60, maxHeight: 60 }} /></a> : <span className="muted">-</span>}</td>
             <td className="num">{inr(x.amount)}</td><td className="num"><ActionButton action={deleteExpenseAction} fields={{ rid: x.id }} label="Delete" className="btn sm danger" confirm={`Delete the expense “${x.item}”?`} /></td></tr>)}
         </tbody></table></div>)}</div>
     </div>

@@ -33,8 +33,8 @@ export default async function Customers({ searchParams }: { searchParams: Promis
           {rows.length === 0 ? <Empty title={term ? 'No customers match your search' : 'No customers yet'}>{!term && <Link href="/customers/new">Add your first customer</Link>}</Empty> : (
             <div className="tablewrap"><table><thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>City</th><th className="num">Bookings</th><th className="num">Booked value</th></tr></thead><tbody>
               {rows.map(({ c, bookings, value }) => (
-                <tr key={c.id}><td><Link className="strong" href={`/customers/${c.id}`}>{c.name}</Link>{fields.filter(f => c.custom?.[f.id]).map(f => <div key={f.id} className="small muted">{f.label}: {c.custom[f.id]}</div>)}</td><td className="nowrap">{c.phone}</td><td>{c.email || <span className="muted">—</span>}</td>
-                  <td>{c.city || <span className="muted">—</span>}</td><td className="num">{bookings}</td><td className="num">{inr(value)}</td></tr>))}
+                <tr key={c.id}><td><Link className="strong" href={`/customers/${c.id}`}>{c.name}</Link>{fields.filter(f => c.custom?.[f.id]).map(f => <div key={f.id} className="small muted">{f.label}: {c.custom[f.id]}</div>)}</td><td className="nowrap">{c.phone}</td><td>{c.email || <span className="muted">-</span>}</td>
+                  <td>{c.city || <span className="muted">-</span>}</td><td className="num">{bookings}</td><td className="num">{inr(value)}</td></tr>))}
             </tbody></table></div>)}
         </div>
       </div>

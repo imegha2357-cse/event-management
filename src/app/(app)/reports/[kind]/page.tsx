@@ -33,7 +33,7 @@ export default async function Report({ params, searchParams }: { params: Promise
   );
 }
 
-const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '—');
+const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '-');
 const istDate = (col: unknown) => sql`(${col} at time zone 'Asia/Kolkata')::date`;
 function Group({ title, rows }: { title: string; rows: [string, number, number?][] }) {
   if (!rows.length) return null;
@@ -104,7 +104,7 @@ const BODY: Record<ReportKey, (ctx: Ctx, r: Range) => Promise<React.ReactNode>> 
       <Kpis items={[['Invoices', rows.length], ['Taxable value', inr(sum('taxable'))], ['CGST', inr(sum('cgst'))], ['SGST', inr(sum('sgst'))], ['Invoice total', inr(total)]]} />
       <table className="rtable"><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th className="num">Taxable</th><th className="num">GST %</th><th className="num">CGST</th><th className="num">SGST</th><th className="num">Total</th></tr></thead><tbody>
         {t.map(x => <tr key={x.i.id}><td className="nowrap"><Link href={`/invoices/${x.i.id}`}>{x.i.docNo}</Link></td><td className="nowrap">{fmtDate(x.i.issuedOn)}</td><td>{x.customer}</td>
-          <td className="num">{inr(x.taxable)}</td><td className="num">{x.i.gst ? `${x.i.gstRate}%` : '—'}</td><td className="num">{inr(x.cgst)}</td><td className="num">{inr(x.sgst)}</td><td className="num">{inr(x.i.total)}</td></tr>)}
+          <td className="num">{inr(x.taxable)}</td><td className="num">{x.i.gst ? `${x.i.gstRate}%` : '-'}</td><td className="num">{inr(x.cgst)}</td><td className="num">{inr(x.sgst)}</td><td className="num">{inr(x.i.total)}</td></tr>)}
       </tbody><tfoot><tr><td colSpan={3}>Total</td><td className="num">{inr(sum('taxable'))}</td><td /><td className="num">{inr(sum('cgst'))}</td><td className="num">{inr(sum('sgst'))}</td><td className="num">{inr(total)}</td></tr></tfoot></table>
       <div className="report-groups"><Group title="Taxable value by GST rate" rows={rates} />
         <Group title="Without GST" rows={t.some(x => !x.i.gst) ? [['Invoices without GST', t.filter(x => !x.i.gst).reduce((s, x) => s + x.taxable, 0), t.filter(x => !x.i.gst).length]] : []} /></div>
@@ -121,16 +121,16 @@ const BODY: Record<ReportKey, (ctx: Ctx, r: Range) => Promise<React.ReactNode>> 
     const today = todayIST();
     const rows = all.map(x => ({ ...x, bal: x.i.total - x.paid, days: Math.max(0, daysBetween(x.i.issuedOn, today)) })).filter(x => x.bal > 0).sort((a, b) => b.days - a.days);
     if (!rows.length) return <Empty title="Nothing pending">Every invoice in this period is fully paid.</Empty>;
-    const bucket = (d: number) => (d <= 30 ? '0–30 days' : d <= 60 ? '31–60 days' : d <= 90 ? '61–90 days' : 'Over 90 days');
+    const bucket = (d: number) => (d <= 30 ? '0 to 30 days' : d <= 60 ? '31 to 60 days' : d <= 90 ? '61 to 90 days' : 'Over 90 days');
     const bal = rows.reduce((s, x) => s + x.bal, 0);
     return (<>
       <Kpis items={[['Invoices with balance', rows.length], ['Billed', inr(rows.reduce((s, x) => s + x.i.total, 0))], ['Received', inr(rows.reduce((s, x) => s + x.paid, 0))], ['Still to collect', inr(bal)]]} />
       <table className="rtable"><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Event</th><th className="num">Total</th><th className="num">Paid</th><th className="num">Balance</th><th className="num">Days</th></tr></thead><tbody>
         {rows.map(x => <tr key={x.i.id}><td className="nowrap"><Link href={`/invoices/${x.i.id}`}>{x.i.docNo}</Link></td><td className="nowrap">{fmtDate(x.i.issuedOn)}</td>
-          <td>{x.customer}<div className="small muted">{x.phone}</div></td><td>{x.event ?? '—'}</td><td className="num">{inr(x.i.total)}</td><td className="num">{inr(x.paid)}</td>
+          <td>{x.customer}<div className="small muted">{x.phone}</div></td><td>{x.event ?? '-'}</td><td className="num">{inr(x.i.total)}</td><td className="num">{inr(x.paid)}</td>
           <td className="num"><b>{inr(x.bal)}</b></td><td className={`num${x.days > 60 ? ' bad' : ''}`}>{x.days}</td></tr>)}
       </tbody><tfoot><tr><td colSpan={6}>Total still to collect</td><td className="num">{inr(bal)}</td><td /></tr></tfoot></table>
-      <div className="report-groups"><Group title="By age (days since invoice)" rows={['0–30 days', '31–60 days', '61–90 days', 'Over 90 days'].map(k => [k, rows.filter(x => bucket(x.days) === k).reduce((s, x) => s + x.bal, 0), rows.filter(x => bucket(x.days) === k).length] as [string, number, number]).filter(x => x[2])} /></div>
+      <div className="report-groups"><Group title="By age (days since invoice)" rows={['0 to 30 days', '31 to 60 days', '61 to 90 days', 'Over 90 days'].map(k => [k, rows.filter(x => bucket(x.days) === k).reduce((s, x) => s + x.bal, 0), rows.filter(x => bucket(x.days) === k).length] as [string, number, number]).filter(x => x[2])} /></div>
     </>);
   },
 
@@ -145,7 +145,7 @@ const BODY: Record<ReportKey, (ctx: Ctx, r: Range) => Promise<React.ReactNode>> 
       <Kpis items={[['Payments', rows.length], ['Total received', inr(total)], ['Customers who paid', new Set(rows.map(x => x.customer)).size]]} />
       <table className="rtable"><thead><tr><th>Date</th><th>Type</th><th>Invoice</th><th>Customer</th><th>Mode</th><th>Reference</th><th className="num">Amount</th></tr></thead><tbody>
         {rows.map(x => <tr key={x.p.id}><td className="nowrap">{fmtDate(x.p.paidOn)}</td><td>{x.p.kind}</td><td className="nowrap"><Link href={`/invoices/${x.invId}`}>{x.docNo}</Link></td>
-          <td>{x.customer}</td><td>{x.p.mode}</td><td>{x.p.reference || '—'}</td><td className="num">{inr(x.p.amount)}</td></tr>)}
+          <td>{x.customer}</td><td>{x.p.mode}</td><td>{x.p.reference || '-'}</td><td className="num">{inr(x.p.amount)}</td></tr>)}
       </tbody><tfoot><tr><td colSpan={6}>Total received</td><td className="num">{inr(total)}</td></tr></tfoot></table>
       <div className="report-groups"><Group title="By payment mode" rows={by(rows, x => x.p.mode, x => x.p.amount)} /><Group title="By type" rows={by(rows, x => x.p.kind, x => x.p.amount)} /></div>
     </>);
@@ -162,7 +162,7 @@ const BODY: Record<ReportKey, (ctx: Ctx, r: Range) => Promise<React.ReactNode>> 
       <Kpis items={[['Expense entries', rows.length], ['Total spent', inr(total)], ['Linked to events', inr(rows.filter(x => x.e.bookingId).reduce((s, x) => s + x.e.amount, 0))], ['General (no event)', inr(rows.filter(x => !x.e.bookingId).reduce((s, x) => s + x.e.amount, 0))]]} />
       <table className="rtable"><thead><tr><th>Date</th><th>Category</th><th>What for</th><th>Paid to</th><th>Event</th><th>Mode</th><th className="num">Amount</th></tr></thead><tbody>
         {rows.map(x => <tr key={x.e.id}><td className="nowrap">{fmtDate(x.e.spentOn)}</td><td>{x.e.category}</td><td>{x.e.item}{x.e.source === 'staff' ? <div className="small muted">Staff wages</div> : null}</td>
-          <td>{x.e.paidTo || '—'}</td><td>{x.event ?? '—'}</td><td>{x.e.mode}</td><td className="num">{inr(x.e.amount)}</td></tr>)}
+          <td>{x.e.paidTo || '-'}</td><td>{x.event ?? '-'}</td><td>{x.e.mode}</td><td className="num">{inr(x.e.amount)}</td></tr>)}
       </tbody><tfoot><tr><td colSpan={6}>Total spent</td><td className="num">{inr(total)}</td></tr></tfoot></table>
       <div className="report-groups"><Group title="By category" rows={by(rows, x => x.e.category, x => x.e.amount)} /><Group title="By event" rows={by(rows, x => x.event ?? 'General (no event)', x => x.e.amount)} /></div>
     </>);

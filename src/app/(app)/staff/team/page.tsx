@@ -49,7 +49,7 @@ export default async function Team() {
             {roles.filter(r => !DEFAULT_ROLES.some(d => d.name === r.name)).map(r => <ActionButton key={r.name} action={deleteRoleAction} fields={{ name: r.name }} label={`Delete “${r.name}”`} className="btn sm danger" />)}
           </div></div>
           : <div className="tablewrap"><table className="perm"><thead><tr><th>Can open</th><th>Owner</th>{roles.map(r => <th key={r.name}>{r.name}</th>)}</tr></thead><tbody>
-            {keys.map(k => <tr key={k}><td>{PERM_LABEL[k]}</td><td><span className="badge good">Always</span></td>{roles.map(r => <td key={r.name}>{r.perms.includes(k) ? <span className="badge good">Yes</span> : <span className="muted">—</span>}</td>)}</tr>)}
+            {keys.map(k => <tr key={k}><td>{PERM_LABEL[k]}</td><td><span className="badge good">Always</span></td>{roles.map(r => <td key={r.name}>{r.perms.includes(k) ? <span className="badge good">Yes</span> : <span className="muted">-</span>}</td>)}</tr>)}
           </tbody></table></div>}
       </div>
     </div>

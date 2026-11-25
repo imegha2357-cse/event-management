@@ -1,3 +1,5 @@
+import { LegalLinks } from '@/components/legal-page';
+import { legalReady } from '@/lib/legal';
 import { notFound } from 'next/navigation';
 import { desc, eq } from 'drizzle-orm';
 import { getDb, schema } from '@/db';
@@ -35,6 +37,7 @@ export default async function PublicQuote({ params }: { params: Promise<{ token:
         {open && !expired && <div className="panel-b" style={{ borderTop: '1px solid var(--line)' }}><DecisionPanel action={publicDecideAction} fields={{ token }} /></div>}
       </div>
       <QuoteDocument q={q} tenant={tenant} customer={customer} />
+      {legalReady && <div className="no-print"><LegalLinks /></div>}
     </main>
   );
 }

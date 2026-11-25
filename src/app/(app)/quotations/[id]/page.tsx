@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Icon } from '@/components/icons';
 import { notFound } from 'next/navigation';
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { schema } from '@/db';
@@ -37,7 +38,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
   const open = q.status === 'Draft' || q.status === 'Sent';
   const [inv] = booking ? await db.select().from(schema.invoices).where(eq(schema.invoices.bookingId, booking.id)).limit(1) : [];
   const waOk = perk(tenant, 'whatsappShare');
-  const waText = `Vanakkam ${customer.name}, here is your quotation ${quoteLabel(tenant, q.number)} from ${tenant.name} for ${q.eventTitle} on ${fmtDate(q.eventDate)} — total ${inr(q.total)}.\n\nPlease review and accept or decline here: ${link}`;
+  const waText = `Vanakkam ${customer.name}, here is your quotation ${quoteLabel(tenant, q.number)} from ${tenant.name} for ${q.eventTitle} on ${fmtDate(q.eventDate)}, total ${inr(q.total)}.\n\nPlease review and accept or decline here: ${link}`;
 
   return (
     <>
@@ -56,7 +57,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
                   <input className="input small" readOnly value={link} aria-label="Customer review link" />
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {waOk ? <a className="btn good" href={`https://wa.me/${waNumber(customer.phone)}?text=${encodeURIComponent(waText)}`} target="_blank" rel="noopener noreferrer">Share on WhatsApp</a>
-                      : <Link className="btn" href="/settings/plan" title="WhatsApp sharing comes with Pro">🔒 WhatsApp (Pro)</Link>}
+                      : <Link className="btn" href="/settings/plan" title="WhatsApp sharing comes with Pro"><Icon name="lock" size={14} /> WhatsApp (Pro)</Link>}
                     <CopyButton text={link} />
                     <a className="btn" href={link} target="_blank" rel="noopener noreferrer">Preview</a>
                   </div>
@@ -73,7 +74,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
             {booking && (
               <div className="panel"><div className="panel-h"><h2>Booking</h2><Badge s={booking.status} /></div>
                 <div className="panel-b" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <Link className="strong" href={`/bookings/${booking.id}`}>{bookingNo(booking.number)} — {booking.title}</Link>
+                  <Link className="strong" href={`/bookings/${booking.id}`}>{bookingNo(booking.number)} · {booking.title}</Link>
                   {inv ? <Link href={`/invoices/${inv.id}`}>Invoice {inv.docNo}</Link> : <Link className="btn primary" href={`/invoices/new?booking=${booking.id}`}>Create invoice</Link>}
                   {note && <div className="small">WhatsApp: <Badge s={note.status} />{note.lastError && note.status !== 'sent' && <div className="ferr" style={{ marginTop: 4 }}>{note.lastError}</div>}</div>}
                 </div>

@@ -42,7 +42,7 @@ export default async function Settings() {
           {log.length === 0 ? <Empty title="No messages yet">A confirmation is sent when a customer accepts a quotation.</Empty> : (
             <div className="tablewrap"><table><thead><tr><th>When</th><th>Booking</th><th>To</th><th>Status</th><th className="num">Attempts</th><th>Error</th><th /></tr></thead><tbody>
               {log.map(({ n, title }) => (
-                <tr key={n.id}><td className="nowrap">{fmtDateTime(n.createdAt)}</td><td>{n.bookingId ? <Link href={`/bookings/${n.bookingId}`}>{title}</Link> : '—'}</td><td className="nowrap">+{n.toPhone}</td>
+                <tr key={n.id}><td className="nowrap">{fmtDateTime(n.createdAt)}</td><td>{n.bookingId ? <Link href={`/bookings/${n.bookingId}`}>{title}</Link> : '-'}</td><td className="nowrap">+{n.toPhone}</td>
                   <td><Badge s={n.status} /></td><td className="num">{n.attempts}</td><td className="small" style={{ maxWidth: 320 }}>{n.status === 'sent' ? '' : n.lastError}</td>
                   <td className="num">{n.status !== 'sent' && <ActionButton action={retryNotificationAction} fields={{ rid: n.id }} label="Retry" pendingText="Sending…" className="btn sm" />}</td></tr>))}
             </tbody></table></div>)}

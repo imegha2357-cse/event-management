@@ -49,11 +49,11 @@ export default async function ToolPage({ params, searchParams }: { params: Promi
     setupWhen: r => <>{fmtDate(r.setupDate)}<div className="small muted">{r.setupTime}</div></>,
     itemsTaken: r => { const date = ev(r.bookingId)?.date ?? '';
       const short = (r.items ?? []).map((i: { ref: string; qty: number }) => { const it = (rows.items ?? []).find(x => x.id === i.ref); if (!it) return null; const b = bookedOn(date, i.ref); return b > Number(it.stock) ? `${it.name}: need ${b}, have ${it.stock}` : null; }).filter(Boolean);
-      return <><span className="small">{(r.items ?? []).map((i: { ref: string; qty: number }) => { const it = (rows.items ?? []).find(x => x.id === i.ref); return it ? `${it.name} × ${i.qty}` : ''; }).filter(Boolean).join(', ') || '—'}</span>
+      return <><span className="small">{(r.items ?? []).map((i: { ref: string; qty: number }) => { const it = (rows.items ?? []).find(x => x.id === i.ref); return it ? `${it.name} × ${i.qty}` : ''; }).filter(Boolean).join(', ') || '-'}</span>
         {short.length > 0 && <div><span className="chip bad" title={short.join('; ')}>Short of stock</span></div>}</>; },
     bookedUpcoming: r => (rows.plans ?? []).filter(p => (ev(p.bookingId)?.date ?? '') >= today).reduce((s, p) => s + (p.items ?? []).filter((i: { ref: string }) => i.ref === r.id).reduce((a: number, i: { qty: number }) => a + i.qty, 0), 0).toLocaleString('en-IN'),
     delivProgress: r => <div className="bar" style={{ width: 110 }}><i style={{ width: `${((DELIV_STAGES.indexOf(r.stage) + 1) / DELIV_STAGES.length) * 100}%` }} /></div>,
-    orderValue: r => { const c = (rows.cards ?? []).find(x => x.id === r.card); return c ? inr(c.style === 'Digital' ? c.price : c.price * Number(r.qty)) : '—'; },
+    orderValue: r => { const c = (rows.cards ?? []).find(x => x.id === r.card); return c ? inr(c.style === 'Digital' ? c.price : c.price * Number(r.qty)) : '-'; },
     cardPrice: r => r.style === 'Digital' ? `${inr(r.price)} per design` : `${inr(r.price)} per card`,
   };
   const cell = (c: Col, r: Row): React.ReactNode => {
@@ -62,10 +62,10 @@ export default async function ToolPage({ params, searchParams }: { params: Promi
       case 'text': return <>{k.bold ? <b>{r[k.f]}</b> : r[k.f]}{k.sub && r[k.sub] && <div className="small muted">{r[k.sub]}</div>}</>;
       case 'num': return `${Number(r[k.f] || 0).toLocaleString('en-IN')}${k.unit ? ' ' + (r[k.unit] ?? '') : ''}`;
       case 'money': return k.bold ? <b>{inr(r[k.f])}</b> : inr(r[k.f]);
-      case 'date': return <>{r[k.f] ? fmtDate(r[k.f]) : '—'}{k.late && r[k.f] && r[k.late.doneField] !== k.late.doneValue && r[k.f] < today && <div><span className="chip bad">Late</span></div>}</>;
-      case 'event': { const e = ev(r.bookingId ?? r.eventId); return e ? <><Link href={`/bookings/${e.id}`}>{e.title}</Link><div className="small muted">{fmtDate(e.date)}</div></> : <span className="muted">—</span>; }
-      case 'ref': return (rows[k.coll] ?? []).find(x => x.id === r[k.f])?.[k.show] ?? '—';
-      case 'chip': return r[k.f] ? <span className={'chip ' + (r[k.f] === 'Veg' ? 'good' : r[k.f] === 'Non-veg' ? 'bad' : 'info')}>{r[k.f]}</span> : '—';
+      case 'date': return <>{r[k.f] ? fmtDate(r[k.f]) : '-'}{k.late && r[k.f] && r[k.late.doneField] !== k.late.doneValue && r[k.f] < today && <div><span className="chip bad">Late</span></div>}</>;
+      case 'event': { const e = ev(r.bookingId ?? r.eventId); return e ? <><Link href={`/bookings/${e.id}`}>{e.title}</Link><div className="small muted">{fmtDate(e.date)}</div></> : <span className="muted">-</span>; }
+      case 'ref': return (rows[k.coll] ?? []).find(x => x.id === r[k.f])?.[k.show] ?? '-';
+      case 'chip': return r[k.f] ? <span className={'chip ' + (r[k.f] === 'Veg' ? 'good' : r[k.f] === 'Non-veg' ? 'bad' : 'info')}>{r[k.f]}</span> : '-';
       case 'status': return <AutoSelect action={setToolFieldAction} fields={{ tool: tool.key, coll: tab.coll!, rid: r.id, f: k.f }} name="value" value={String(r[k.f] ?? k.opts[0])} options={k.opts} label={c.h} />;
       case 'calc': return CALC[k.fn]?.(r) ?? '';
     }
@@ -121,7 +121,7 @@ export default async function ToolPage({ params, searchParams }: { params: Promi
     <PageHead title={tool.title} sub={tool.intro} badge={<span className="tool" style={{ padding: 4, border: 0 }}><span className="ico"><Icon name={tool.icon} /></span></span>} />
     <div className="body">
       <div className="seg" role="tablist">{tabs.map(t => { const lk = t.plan && !atLeast(ctx.tenant, t.plan); const n = t.coll ? (rows[t.coll] ?? []).length : null; return (
-        <Link key={t.key} role="tab" aria-selected={t === tab} className={t === tab ? 'on' : ''} href={`/services/tools/${tool.key}?tab=${t.key}`}>{lk && '🔒 '}{t.label}{n !== null && !lk ? ` (${n})` : ''}{lk ? ` · ${PLANS[t.plan!].name}` : ''}</Link>); })}</div>
+        <Link key={t.key} role="tab" aria-selected={t === tab} className={t === tab ? 'on' : ''} href={`/services/tools/${tool.key}?tab=${t.key}`}>{lk && <Icon name="lock" size={13} />}{lk && ' '}{t.label}{n !== null && !lk ? ` (${n})` : ''}{lk ? ` · ${PLANS[t.plan!].name}` : ''}</Link>); })}</div>
       {tab.intro && <p className="small muted">{tab.intro}</p>}
       {body}
     </div>

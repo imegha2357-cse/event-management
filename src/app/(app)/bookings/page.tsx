@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Icon } from '@/components/icons';
 import { and, asc, desc, eq, gte, ilike, lt, notInArray, or, sql } from 'drizzle-orm';
 import { schema } from '@/db';
 import { requireUser, gate } from '@/lib/session';
@@ -70,8 +71,8 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
                   <td>{customer}</td><td>{b.venue}</td>
                   <td><div className="chips">{(b.services ?? []).map(k => <span key={k} className="chip">{SVC[k]?.name ?? k}</span>)}</div></td>
                   <td><AutoSelect action={setBookingStatusAction} fields={{ rid: b.id }} name="status" value={b.status} options={statuses} label={`Status of ${b.title}`} /></td>
-                  <td className="num">{b.total ? inr(b.total) : <span className="muted">—</span>}</td>
-                  <td className="num">{b.quotationId ? <Link className="decided ok" href={`/quotations/${b.quotationId}`}>✓ Accepted</Link> : <span className="muted small">Direct booking</span>}</td>
+                  <td className="num">{b.total ? inr(b.total) : <span className="muted">-</span>}</td>
+                  <td className="num">{b.quotationId ? <Link className="decided ok" href={`/quotations/${b.quotationId}`}><Icon name="check" size={14} /> Accepted</Link> : <span className="muted small">Direct booking</span>}</td>
                 </tr>))}
             </tbody></table></div>)}
         </div>

@@ -43,7 +43,7 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
       {sel.length === 0 ? <div className="panel"><div className="empty"><b>Pick at least one event to compare</b>Events appear here once they have a quotation or invoice.</div></div> : (<>
         <div className="panel"><div className="tablewrap"><table className="cmp"><thead><tr><th />{sel.map(x => <th key={x.b.id} className="num"><b>{x.b.title}</b><div className="muted" style={{ fontWeight: 400, textTransform: 'none' }}>{x.b.eventType}{running(x) ? '*' : ''}</div></th>)}</tr></thead>
           <tbody>{row('Quote', x => inr(x.m.quote))}{row('Money received', x => inr(x.m.received))}{row('Money spent', x => inr(x.m.spent))}{row(<b>Profit</b>, x => <b>{inr(x.m.profit)}</b>, 'hl')}
-            {row('Profit margin', x => x === best ? <span className="pillbest">{margin(x.m)}%</span> : <b>{margin(x.m)}%</b>)}
+            {row('Profit margin', x => x === best ? <span className="bestmark">{margin(x.m)}%</span> : <b>{margin(x.m)}%</b>)}
             {EXP_CATS.map(c => <tr key={c}><td className="muted">· {c}</td>{sel.map(x => <td key={x.b.id} className="num muted">{inr(x.m.byCat[c] ?? 0)}</td>)}</tr>)}</tbody></table></div></div>
         {sel.some(running) && <p className="small muted">*Still running, so its spending may rise.</p>}
         <div className="panel"><div className="panel-h"><h2>Where the money went</h2></div><div className="panel-b">

@@ -174,7 +174,7 @@ export async function saveDocsAction(_: ActionState, fd: FormData): Promise<Acti
   const { ctx, error } = await entCtx(); if (error) return { error };
   const parsed = z.object({
     quoteTitle: z.string().trim().min(2).max(30), invTitleGst: z.string().trim().min(2).max(30), invTitle: z.string().trim().min(2).max(30),
-    prefix: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{1,8}$/, 'Use 1–8 letters or numbers.'),
+    prefix: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{1,8}$/, 'Use 1 to 8 letters or numbers.'),
     gstRate: z.coerce.number().refine(v => [5, 12, 18, 28].includes(v)), validDays: z.coerce.number().int().min(1).max(365),
   }).safeParse(Object.fromEntries(fd));
   if (!parsed.success) return { fieldErrors: zodFieldErrors(parsed.error.issues) };

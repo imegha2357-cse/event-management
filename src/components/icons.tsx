@@ -22,6 +22,8 @@ const P: Record<string, string> = {
   wand: 'M15 4V2M15 10V8M11 6h2M17 6h2M4 20 15 9',
   whatsapp: 'M21 12a9 9 0 0 1-13.4 7.9L3 21l1.2-4.4A9 9 0 1 1 21 12z',
   admin: 'M12 3l8 4v5c0 4.5-3.4 8.4-8 9-4.6-.6-8-4.5-8-9V7z',
+  check: 'M5 12.5l4.5 4.5L19 7',
+  cross: 'M6 6l12 12M18 6 6 18',
   print: 'M6 9V3h12v6M3 9h18v8H3zM6 14h12v7H6z',
 };
 export function Icon({ name, size = 16 }: { name: string; size?: number }) {

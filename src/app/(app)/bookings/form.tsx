@@ -11,7 +11,7 @@ export function CustomFieldInputs({ fields, values, prefix = 'cf_' }: { fields: 
   if (!fields.length) return null;
   return (<div className="grid3">{fields.map(f => (
     <Field key={f.id} label={f.label} htmlFor={prefix + f.id}>
-      {f.type === 'select' ? <select id={prefix + f.id} name={prefix + f.id} className="input" defaultValue={values?.[f.id] ?? ''}><option value="">—</option>{(f.options ?? []).map(o => <option key={o}>{o}</option>)}</select>
+      {f.type === 'select' ? <select id={prefix + f.id} name={prefix + f.id} className="input" defaultValue={values?.[f.id] ?? ''}><option value="">None</option>{(f.options ?? []).map(o => <option key={o}>{o}</option>)}</select>
         : <input id={prefix + f.id} name={prefix + f.id} className="input" type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'} defaultValue={values?.[f.id] ?? ''} />}
     </Field>))}</div>);
 }
@@ -67,7 +67,7 @@ export function BookingForm({ customers, services, eventTypes, taken, today, sho
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button type="button" className="btn sm" aria-label="Fewer workers" onClick={() => setCrew(c => Math.max(0, c - 1))}>−</button><b style={{ minWidth: 30, textAlign: 'center' }}>{crew}</b>
               <button type="button" className="btn sm" aria-label="More workers" onClick={() => setCrew(c => Math.min(500, c + 1))}>+</button><span className="small muted">workers. Assign crew teams on the booking page.</span></div></div>}
-          {branches.length > 0 && <Field label="Branch" htmlFor="branchId"><select id="branchId" name="branchId" className="input"><option value="">—</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>}
+          {branches.length > 0 && <Field label="Branch" htmlFor="branchId"><select id="branchId" name="branchId" className="input"><option value="">None</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>}
           <CustomFieldInputs fields={eventFields} />
           <Field label="Special notes (optional)" htmlFor="notes"><textarea id="notes" name="notes" rows={2} className="input" placeholder="e.g. Rose theme stage, cook to reach the hall by 2 PM" /></Field>
         </div>

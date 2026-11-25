@@ -93,6 +93,12 @@ Vanakkam {{1}}, your booking for {{2}} on {{3}}, {{4}} at {{5}} is confirmed wit
 1 customer name · 2 event title · 3 date · 4 time · 5 venue · 6 company name · 7 note.
 Customer numbers are stored as 10-digit Indian mobiles and sent as `91XXXXXXXXXX`.
 
+## Before launch
+
+- Fill in `src/lib/legal.ts` (operator, address, email, courts, effective date). The Privacy Policy (`/privacy`) and Terms (`/terms`) pages, and the links to them on the sign-in, sign-up and customer quotation pages, stay hidden until every field is filled.
+- Connect the custom domain to the Cloudflare Worker, then set `AUTH_URL` in `wrangler.jsonc` and the Google redirect URI to it.
+- House style: no em or en dashes, no emoji, no gradients or pill-shaped controls, no decorative animation. `tests/style_audit.py` checks every page for these.
+
 ## Tests
 
 `tests/reports_test.py` covers every report, plan locks, periods and the printed layout. `tests/decide_test.py` covers the quotation workflow: the list has only ✓ Accept / ✗ Decline, accepted quotations move to

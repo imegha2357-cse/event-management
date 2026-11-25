@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
 import Link from 'next/link';
+import { Icon } from '@/components/icons';
 import { notFound } from 'next/navigation';
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { schema } from '@/db';
@@ -36,7 +37,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
   const leaders = allStaff.filter(s => s.kind === 'permanent');
   const options = allStaff.filter(s => !assigned.has(s.id)).map(s => ({
     id: s.id, group: s.kind === 'permanent' ? 'Permanent employees' : 'Helper boys',
-    label: s.kind === 'permanent' ? `${s.name} (+${allStaff.filter(h => h.leaderId === s.id).length} helpers)` : `${s.name} · brought by ${leaders.find(l => l.id === s.leaderId)?.name ?? '—'}`,
+    label: s.kind === 'permanent' ? `${s.name} (+${allStaff.filter(h => h.leaderId === s.id).length} helpers)` : `${s.name} · brought by ${leaders.find(l => l.id === s.leaderId)?.name ?? '-'}`,
   }));
   const invs = await db.select().from(schema.invoices).where(eq(schema.invoices.bookingId, b.id));
   const exps = await db.select().from(schema.expenses).where(eq(schema.expenses.bookingId, b.id)).orderBy(desc(schema.expenses.spentOn));
@@ -67,14 +68,14 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
               <div className="panel-b"><dl className="dl">
                 <dt>Customer</dt><dd><Link href={`/customers/${customer.id}`}>{customer.name}</Link> · {customer.phone}</dd>
                 <dt>Event</dt><dd>{b.eventType}</dd>
-                <dt>Date & time</dt><dd>{fmtDate(b.eventDate)}{b.startTime && ` · ${fmtTime(b.startTime)}${b.endTime ? '–' + fmtTime(b.endTime) : ''}`}</dd>
+                <dt>Date & time</dt><dd>{fmtDate(b.eventDate)}{b.startTime && ` · ${fmtTime(b.startTime)}${b.endTime ? ' to ' + fmtTime(b.endTime) : ''}`}</dd>
                 <dt>Venue</dt><dd>{b.venue}</dd>
-                <dt>Guests</dt><dd>{b.guests || '—'}</dd>
+                <dt>Guests</dt><dd>{b.guests || 'Not set'}</dd>
                 {b.setupTime && <><dt>Setup from</dt><dd>{fmtTime(b.setupTime)}</dd></>}
                 {(b.services ?? []).length > 0 && <><dt>Services</dt><dd><div className="chips">{b.services.map(k => <span key={k} className="chip">{SVC[k]?.name ?? k}</span>)}</div></dd></>}
                 {branch && <><dt>Branch</dt><dd>{branch.name}</dd></>}
                 {ent && (custom.eventFields ?? []).filter(f => b.custom?.[f.id]).map(f => <Fragment key={f.id}><dt>{f.label}</dt><dd>{b.custom[f.id]}</dd></Fragment>)}
-                <dt>Amount</dt><dd><b>{b.total ? inr(b.total) : '—'}</b></dd>
+                <dt>Amount</dt><dd><b>{b.total ? inr(b.total) : 'Not set'}</b></dd>
                 {quote && <><dt>Quotation</dt><dd><Link href={`/quotations/${quote.id}`}>{quoteLabel(tenant, quote.number)}</Link> · accepted {fmtDateTime(quote.decidedAt)}</dd></>}
                 {b.notes && <><dt>Notes</dt><dd style={{ whiteSpace: 'pre-line' }}>{b.notes}</dd></>}
               </dl></div>
@@ -110,7 +111,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
                   {crew.map(({ c, s }) => (
                     <tr key={c.id}><td>{s.name}<div className="small muted">{s.phone}</div></td><td>{s.kind === 'permanent' ? 'Permanent' : `Helper · ${leaders.find(l => l.id === s.leaderId)?.name ?? ''}`}</td>
                       <td className="num">{inr(c.wage)}</td>
-                      <td><ActionButton action={togglePresentAction} fields={{ rid: c.id, present: String(!c.present) }} className={'btn sm' + (c.present ? ' good' : '')} label={c.present ? '✓ Present' : 'Mark present'} /></td>
+                      <td><ActionButton action={togglePresentAction} fields={{ rid: c.id, present: String(!c.present) }} className={'btn sm' + (c.present ? ' good' : '')} label={c.present ? <><Icon name="check" size={14} /> Present</> : 'Mark present'} /></td>
                       <td className="num"><ActionButton action={removeCrewAction} fields={{ rid: c.id }} className="btn sm danger" label="Remove" /></td></tr>))}
                 </tbody></table>)}
               {b.status !== 'Cancelled' && <div className="panel-b" style={{ borderTop: '1px solid var(--line)' }}><AssignCrewForm bookingId={b.id} options={options} /></div>}

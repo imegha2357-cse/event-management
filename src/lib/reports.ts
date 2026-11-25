@@ -12,7 +12,7 @@ export function presets(today = todayIST()) {
   const y = +today.slice(0, 4), m = +today.slice(5, 7);
   const fyStart = m >= 4 ? y : y - 1;
   const [ly, lm] = m === 1 ? [y - 1, 12] : [y, m - 1];
-  const q = Math.floor(((m + 8) % 12) / 3); // financial-year quarter 0..3 (Apr–Jun = 0)
+  const q = Math.floor(((m + 8) % 12) / 3); // financial-year quarter 0..3 (Apr to Jun = 0)
   const qStartMonth = ((q * 3 + 3) % 12) + 1, qStartYear = qStartMonth >= 4 ? fyStart : fyStart + 1;
   return [
     { key: 'month', label: 'This month', from: iso(y, m, 1), to: monthEnd(y, m) },

@@ -1,3 +1,6 @@
+import { LegalLinks } from '@/components/legal-page';
+import { legalReady } from '@/lib/legal';
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="auth">
@@ -14,7 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
         <span className="small" style={{ color: 'var(--side-muted)' }}>Each company sees only its own data.</span>
       </aside>
-      <main className="auth-main">{children}</main>
+      <main className="auth-main">{children}{legalReady && <LegalLinks />}</main>
     </div>
   );
 }

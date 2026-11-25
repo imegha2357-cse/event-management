@@ -30,7 +30,7 @@ export function LineItems({ initial, services, guests, discount: d0, gst: g0, gs
         {services.length > 0 && <select className="input" style={{ width: 280 }} value="" aria-label="Add one of your services" onChange={e => {
           const s = services.find(x => x.key === e.target.value); if (!s) return;
           add({ desc: `${s.name} (${s.unit})`, rate: String(s.price), qty: s.unit === 'per plate' && guests ? String(guests) : '1' });
-        }}><option value="">+ Add one of your services…</option>{services.map(s => <option key={s.key} value={s.key}>{s.name} — {rupee(s.price)} {s.unit}</option>)}</select>}
+        }}><option value="">+ Add one of your services…</option>{services.map(s => <option key={s.key} value={s.key}>{s.name}, {rupee(s.price)} {s.unit}</option>)}</select>}
       </div>
       <div className="tablewrap"><table className="items"><thead><tr><th style={{ width: '52%' }}>Description</th><th className="num" style={{ width: 100 }}>Qty</th><th className="num" style={{ width: 140 }}>Rate (₹)</th><th className="num">Amount</th><th style={{ width: 40 }} /></tr></thead>
         <tbody>{items.map((it, n) => (
