@@ -17,7 +17,7 @@ export const metadata = { title: 'Customize' };
 
 const TABS: [string, string][] = [['branding', 'Name and colour'], ['menu', 'Menu'], ['fields', 'Your own fields'], ['statuses', 'Event statuses'], ['documents', 'Quotation and invoice'], ['tools', 'Build your own tool'], ['branches', 'Branches']];
 const TYPES: Record<string, string> = { text: 'Text', number: 'Number', date: 'Date', select: 'Choice list', event: 'Event' };
-const MENU_PAGES: Record<string, string> = { calendar: 'Month view', events: 'All bookings, New booking', quotations: 'All quotations, New quotation', invoices: 'All invoices', payments: 'Overview, Record payment, Add expense, Expenses & profit, Compare events', customers: 'All customers', services: 'My services, your service tools', staff: 'Staff and crews, Team and roles, Vendors' };
+const MENU_PAGES: Record<string, string> = { events: 'All bookings, New booking, Calendar', quotations: 'All quotations, New quotation', invoices: 'All invoices', payments: 'Overview, Record payment, Add expense, Expenses & profit, Compare events', customers: 'All customers', services: 'My services, your service tools', staff: 'Staff and crews, Team and roles, Vendors', reportbook: 'All reports and each printable report' };
 
 export default async function Customize({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const sp = await searchParams;

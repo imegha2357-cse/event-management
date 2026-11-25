@@ -37,6 +37,7 @@ Make someone a platform owner with either:
 | Calendar, dashboard, customers | Month calendar of bookings, dashboard with money tiles, notifications, income vs spending chart, mini calendar; customer list with search and history. |
 | Invoices & finance | GST invoices (CGST/SGST, amount in words, numbered per financial year), advance/installment/final payments with live before→after, expenses with bill photo, profit per event, compare events, WhatsApp reminders and receipts. |
 | Services & tools | 15 services with your prices. Every tool starts empty; you add your own recipes, ingredients, designs, stock and packages. Tools: catering (recipes, ingredients, menus, purchase generator and lists), decoration (designs, stock with shortage warnings, setups, flower orders), photo & video, entertainment, planning (standard checklist), makeup, invitations. |
+| Reports | Seven printable reports with a period picker (this month, last month, quarter, financial year, any dates): bookings, quotations (acceptance rate), sales & GST (taxable, CGST, SGST), pending payments (with age), payments received (by mode), expenses (by category and event), profit per event. Print or save as PDF on a clean A4 page with your company header. Payments, expenses and profit need Pro. |
 | Team, vendors, customize | Team logins with roles, vendors, Enterprise customisation and activity log. |
 
 ## Run locally
@@ -94,7 +95,7 @@ Customer numbers are stored as 10-digit Indian mobiles and sent as `91XXXXXXXXXX
 
 ## Tests
 
-`tests/decide_test.py` covers the quotation workflow: the list has only ✓ Accept / ✗ Decline, accepted quotations move to
+`tests/reports_test.py` covers every report, plan locks, periods and the printed layout. `tests/decide_test.py` covers the quotation workflow: the list has only ✓ Accept / ✗ Decline, accepted quotations move to
 Bookings (confirmed, invoiced), declined ones never appear there. All tests take `BASE=<url>` to run against `npm start`
 or the Cloudflare preview (`wrangler dev`).
 

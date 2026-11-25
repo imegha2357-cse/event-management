@@ -29,6 +29,7 @@ export const MODULES: { key: string; label: string; plan: PlanKey; pitch?: strin
   { key: 'vendors', label: 'Vendors', plan: 'enterprise', pitch: ['Keep your flower, tent, sound and printing suppliers in one place', 'Link vendor costs to events'] },
   { key: 'customize', label: 'Customize', plan: 'enterprise', pitch: ['Your own app name and any brand colour', 'Rename or hide menu items', 'Add your own fields (like Nakshatram or Muhurtham time) and event statuses', 'Design quotation and invoice titles, numbering, GST rate and sections', 'Build your own tools, such as Mehendi bookings or Return gifts', 'Create roles and choose what each one can see', 'Add branches'] },
   { key: 'activity', label: 'Activity log', plan: 'enterprise', pitch: ['See who created, changed or deleted anything, and when', 'Useful when several branches and many staff work in one account'] },
+  { key: 'reportbook', label: 'Reports', plan: 'basic' },
   { key: 'settings', label: 'Company settings', plan: 'basic' },
 ];
 export const moduleOf = (key: string) => MODULES.find(m => m.key === key);
@@ -68,6 +69,7 @@ export const PLAN_MATRIX: [string, string, string, string][] = [
   ['Dashboard with notifications and calendar', 'Yes', 'Yes', 'Yes'],
   ['New quotation and booking forms (with date check)', 'Yes', 'Yes', 'Yes'],
   ['Calendar', '—', 'Yes', 'Yes'],
+  ['Printable reports', 'Bookings, quotations, sales & GST, pending payments', 'All 7, including payments, expenses and profit', 'All 7, including payments, expenses and profit'],
   ['Expenses and profit per event', '—', 'Yes', 'Yes'],
   ['Service tools (catering, decoration, photo…)', 'Core tools', 'All tools: purchase lists, stock, deliverables, run sheets', 'All tools + build your own'],
   ['Roles and permissions', '—', 'Ready roles: Manager, Accountant, Staff', 'Create roles and choose what each sees'],
@@ -83,13 +85,13 @@ export const PLAN_MATRIX: [string, string, string, string][] = [
 ];
 
 /* ---------------- Roles and permissions ---------------- */
-export const PERM_KEYS = ['calendar', 'events', 'quotations', 'invoices', 'payments', 'reports', 'customers', 'services', 'staff', 'vendors', 'tools'] as const;
-export const PERM_LABEL: Record<string, string> = { calendar: 'Calendar', events: 'Bookings', quotations: 'Quotations', invoices: 'Invoices', payments: 'Finance (payments)', reports: 'Expenses & profit', customers: 'Customers', services: 'My services', staff: 'Staff', vendors: 'Vendors', tools: 'Service tools' };
+export const PERM_KEYS = ['calendar', 'events', 'quotations', 'invoices', 'payments', 'reports', 'reportbook', 'customers', 'services', 'staff', 'vendors', 'tools'] as const;
+export const PERM_LABEL: Record<string, string> = { calendar: 'Calendar', events: 'Bookings', quotations: 'Quotations', invoices: 'Invoices', payments: 'Finance (payments)', reports: 'Expenses & profit', reportbook: 'Reports', customers: 'Customers', services: 'My services', staff: 'Staff', vendors: 'Vendors', tools: 'Service tools' };
 /** Pages only the owner can open. */
 export const OWNER_ONLY = ['team', 'activity', 'customize', 'settings'];
 export const DEFAULT_ROLES: Role[] = [
-  { name: 'Manager', perms: ['calendar', 'events', 'quotations', 'invoices', 'customers', 'services', 'staff', 'vendors', 'tools'] },
-  { name: 'Accountant', perms: ['quotations', 'invoices', 'payments', 'reports', 'customers'] },
+  { name: 'Manager', perms: ['calendar', 'events', 'quotations', 'invoices', 'customers', 'services', 'staff', 'vendors', 'tools', 'reportbook'] },
+  { name: 'Accountant', perms: ['quotations', 'invoices', 'payments', 'reports', 'customers', 'reportbook'] },
   { name: 'Staff', perms: ['calendar', 'events', 'tools'] },
 ];
 export const rolesOf = (t: T): Role[] => (isEnt(t) && t.custom?.roles?.length ? t.custom.roles : DEFAULT_ROLES);
@@ -103,22 +105,34 @@ export function allowed(t: T, role: string, key: string) {
   return key.startsWith('tool:') ? r.perms.includes('tools') : r.perms.includes(key);
 }
 
+/** Printable reports. `module` is the data the report shows: the plan and role must allow it too. */
+export const REPORTS = [
+  { key: 'bookings', label: 'Bookings', module: 'events', about: 'Every booked event in the period with customer, venue, status and value.' },
+  { key: 'quotations', label: 'Quotations', module: 'quotations', about: 'Quotations sent, accepted and declined, with the acceptance rate.' },
+  { key: 'sales', label: 'Sales & GST', module: 'invoices', about: 'Invoices issued, with taxable value, CGST, SGST and totals, for your GST filing.' },
+  { key: 'dues', label: 'Pending payments', module: 'invoices', about: 'Who still owes you money, how much, and for how many days.' },
+  { key: 'collections', label: 'Payments received', module: 'payments', about: 'Every advance, installment and final payment received, by payment mode.' },
+  { key: 'expenses', label: 'Expenses', module: 'reports', about: 'What you spent, by category and by event.' },
+  { key: 'profit', label: 'Profit per event', module: 'reports', about: 'Income (before GST), expenses and profit for each event.' },
+] as const;
+export type ReportKey = (typeof REPORTS)[number]['key'];
+
 /* ---------------- Sidebar: at most 10 main items, everything else as tabs inside ---------------- */
 export type Page = { href: string; label: string; module: string };
 export type Group = { key: string; label: string; icon: string; pages: Page[] };
-export const GROUP_LABEL: Record<string, string> = { dashboard: 'Dashboard', calendar: 'Calendar', events: 'Bookings', quotations: 'Quotations', invoices: 'Invoices', payments: 'Finance', customers: 'Customers', services: 'Services', staff: 'Staff & team', settings: 'Settings' };
+export const GROUP_LABEL: Record<string, string> = { dashboard: 'Dashboard', events: 'Bookings', quotations: 'Quotations', invoices: 'Invoices', payments: 'Finance', reportbook: 'Reports', customers: 'Customers', services: 'Services', staff: 'Staff & team', settings: 'Settings' };
 
 export function groupsFor(tools: { key: string; label: string }[]): Group[] {
   return [
     { key: 'dashboard', label: 'Dashboard', icon: 'dashboard', pages: [{ href: '/dashboard', label: 'Overview', module: 'dashboard' }] },
-    { key: 'calendar', label: 'Calendar', icon: 'calendar', pages: [{ href: '/calendar', label: 'Month view', module: 'calendar' }] },
-    { key: 'events', label: 'Bookings', icon: 'events', pages: [{ href: '/bookings', label: 'All bookings', module: 'events' }, { href: '/bookings/new', label: 'New booking', module: 'events' }] },
+    { key: 'events', label: 'Bookings', icon: 'events', pages: [{ href: '/bookings', label: 'All bookings', module: 'events' }, { href: '/bookings/new', label: 'New booking', module: 'events' }, { href: '/calendar', label: 'Calendar', module: 'calendar' }] },
     { key: 'quotations', label: 'Quotations', icon: 'quotations', pages: [{ href: '/quotations', label: 'All quotations', module: 'quotations' }, { href: '/quotations/new', label: 'New quotation', module: 'quotations' }] },
     { key: 'invoices', label: 'Invoices', icon: 'invoices', pages: [{ href: '/invoices', label: 'All invoices', module: 'invoices' }] },
     { key: 'payments', label: 'Finance', icon: 'payments', pages: [
       { href: '/finance', label: 'Overview', module: 'payments' }, { href: '/finance/payment', label: 'Record payment', module: 'payments' },
       { href: '/finance/expense', label: 'Add expense', module: 'payments' }, { href: '/finance/profit', label: 'Expenses & profit', module: 'reports' },
       { href: '/finance/compare', label: 'Compare events', module: 'payments' }] },
+    { key: 'reportbook', label: 'Reports', icon: 'reports', pages: [{ href: '/reports', label: 'All reports', module: 'reportbook' }, ...REPORTS.map(r => ({ href: `/reports/${r.key}`, label: r.label, module: r.module }))] },
     { key: 'customers', label: 'Customers', icon: 'customers', pages: [{ href: '/customers', label: 'All customers', module: 'customers' }] },
     { key: 'services', label: 'Services', icon: 'services', pages: [{ href: '/services', label: 'My services', module: 'services' }, ...tools.map(x => ({ href: `/services/tools/${x.key}`, label: x.label, module: `tool:${x.key}` }))] },
     { key: 'staff', label: 'Staff & team', icon: 'team', pages: [{ href: '/staff', label: 'Staff and crews', module: 'staff' }, { href: '/staff/team', label: 'Team and roles', module: 'team' }, { href: '/staff/vendors', label: 'Vendors', module: 'vendors' }] },

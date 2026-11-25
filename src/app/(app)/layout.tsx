@@ -3,7 +3,7 @@ import { SideNav, SubTabs, type NavGroup } from '@/components/nav';
 import { allowed, has, isEnt, moduleOf, pageModule, PLANS } from '@/lib/plans';
 import { logoutAction } from '../(auth)/actions';
 
-const SECTION: Record<string, string> = { dashboard: 'Main', calendar: 'Main', events: 'Workflow', quotations: 'Workflow', invoices: 'Workflow', payments: 'Workflow', customers: 'Management', services: 'Management', staff: 'Management', settings: 'System' };
+const SECTION: Record<string, string> = { dashboard: 'Main', reportbook: 'Workflow', events: 'Workflow', quotations: 'Workflow', invoices: 'Workflow', payments: 'Workflow', customers: 'Management', services: 'Management', staff: 'Management', settings: 'System' };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireUser();
