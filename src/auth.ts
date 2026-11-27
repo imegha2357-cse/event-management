@@ -18,7 +18,7 @@ export const googleEnabled = Boolean(process.env.AUTH_GOOGLE_ID && process.env.A
 let dummyHash: string | undefined;
 const credentialsSchema = z.object({ email: z.string().trim().toLowerCase().email(), password: z.string().min(1) });
 
-/** Finds the EventDesk user for a Google account, linking by verified email or creating a new company. */
+/** Finds the EventOS user for a Google account, linking by verified email or creating a new company. */
 async function resolveGoogleUser(sub: string, email: string, name: string) {
   const db = await getDb();
   const [existing] = await db.select().from(schema.users).where(or(eq(schema.users.googleSub, sub), eq(schema.users.email, email))).limit(1);

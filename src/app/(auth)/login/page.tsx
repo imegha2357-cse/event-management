@@ -20,7 +20,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const err = sp.error ? (ERRORS[sp.error] ?? 'Sign-in failed. Please try again.') : '';
   return (
     <div className="auth-card">
-      <div><h1>Sign in to EventDesk</h1><p className="muted" style={{ marginTop: 4 }}>New here? <Link href="/signup">Create a company account</Link></p></div>
+      <div><h1>Sign in to EventOS</h1><p className="muted" style={{ marginTop: 4 }}>New here? <Link href="/signup">Create a company account</Link></p></div>
       {sp.reset && <div className="formok" role="status">Your password was changed. Sign in with the new password.</div>}
       {sp.created && <div className="formok" role="status">Your account was created. Please sign in.</div>}
       {err && <div className="formerror" role="alert">{err}</div>}

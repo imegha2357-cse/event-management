@@ -30,9 +30,9 @@ export default async function Customize({ searchParams }: { searchParams: Promis
   let body: React.ReactNode = null;
   if (tab === 'branding') body = (
     <div className="panel"><div className="panel-b"><MiniForm action={saveBrandingAction} submit="Save branding" reset={false}>
-      <div className="field"><label htmlFor="appName">App name shown in the sidebar (leave empty to use “EventDesk”)</label><input id="appName" name="appName" className="input" defaultValue={c.appName} placeholder="e.g. Kumari Wedding Desk" /></div>
+      <div className="field"><label htmlFor="appName">App name shown in the sidebar (leave empty to use “EventOS”)</label><input id="appName" name="appName" className="input" defaultValue={c.appName} placeholder="e.g. Kumari Wedding Desk" /></div>
       <div className="field"><label htmlFor="colour">Brand colour (any colour). Used for the menu, buttons, quotations and invoices.</label><input id="colour" name="colour" type="color" defaultValue={cfg.colour} style={{ width: 72, height: 40 }} /></div>
-      <label className="small" style={{ display: 'flex', gap: 6 }}><input type="checkbox" name="reset" value="1" /> Use the standard colour from Company settings instead</label>
+      <label className="small" style={{ display: 'flex', gap: 6 }}><input type="checkbox" name="reset" value="1" /> Use the standard EventOS black and white look instead</label>
     </MiniForm></div></div>);
   if (tab === 'menu') body = (
     <div className="panel"><div className="panel-b"><MiniForm action={saveMenuAction} submit="Save menu" reset={false}>

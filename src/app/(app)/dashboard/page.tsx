@@ -60,7 +60,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           {showMoney ? <>
             <div className="kpi"><div className="k">Money received</div><div className="v">{inr(mm.income(mk))}</div><div className="s">This month</div></div>
             <div className="kpi"><div className="k">Pending payments</div><div className="v">{inr(pending)}</div><div className="s">Across {owing} client{owing === 1 ? '' : 's'}</div></div>
-            <div className="kpi"><div className="k">Net profit</div><div className="v">{inr(mm.income(mk) - mm.spend(mk))}</div><div className="s">This month (received − spent)</div></div>
+            <div className="kpi"><div className="k">Net profit</div><div className="v">{inr(mm.income(mk) - mm.spend(mk))}</div><div className="s">This month, received minus spent</div></div>
           </> : <>
             <div className="kpi"><div className="k">Completed</div><div className="v">{all.filter(x => x.b.status === 'Completed').length}</div></div>
             <div className="kpi"><div className="k">Quotations waiting</div><div className="v">{sent.length}</div></div>

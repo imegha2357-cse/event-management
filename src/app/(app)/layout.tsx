@@ -1,3 +1,4 @@
+import { Wordmark } from '@/components/brand';
 import { requireUser, isPlatformAdmin } from '@/lib/session';
 import { SideNav, SubTabs, type NavGroup } from '@/components/nav';
 import { allowed, has, isEnt, moduleOf, pageModule, PLANS } from '@/lib/plans';
@@ -19,15 +20,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       }),
     }))
     .filter(g => g.pages.length);
-  const brand = (isEnt(tenant) && custom.colour) || tenant.colour || '#2266d6';
-  const appName = (isEnt(tenant) && custom.appName) || 'EventDesk';
+  // The app uses the EventOS black-and-white theme. Only Enterprise white-labelling (Customize) changes its colour or name;
+  // the company colour from Settings is used on its quotations and invoices.
+  const brand = isEnt(tenant) ? custom.colour : undefined;
+  const appName = (isEnt(tenant) && custom.appName) || '';
   const initials = user.name.split(/\s+/).map(s => s[0]).join('').slice(0, 2).toUpperCase();
   return (
-    <div className="shell" style={{ ['--primary' as string]: brand, ['--primary-hover' as string]: `color-mix(in srgb, ${brand} 85%, black)`, ['--primary-soft' as string]: `color-mix(in srgb, ${brand} 12%, white)` }}>
+    <div className="shell" style={brand ? { ['--primary' as string]: brand, ['--primary-hover' as string]: `color-mix(in srgb, ${brand} 85%, black)`, ['--primary-soft' as string]: `color-mix(in srgb, ${brand} 12%, white)` } : undefined}>
       <aside className="side">
         <div className="side-brand">
-          {tenant.logo ? <img src={tenant.logo} alt="" className="logoimg" /> : <div className="logo">{appName.slice(0, 2).toUpperCase()}</div>}
-          <div><b>{appName}</b><span>{PLANS[ctx.plan].name} plan{tenant.city ? ` · ${tenant.city}` : ''}</span></div>
+          {appName ? <>
+            {tenant.logo ? <img src={tenant.logo} alt="" className="logoimg" /> : <div className="logo">{appName.slice(0, 2).toUpperCase()}</div>}
+            <div><b>{appName}</b><span>{PLANS[ctx.plan].name} plan{tenant.city ? ` · ${tenant.city}` : ''}</span></div>
+          </> : <div><Wordmark height={18} className="wordmark" /><span>{PLANS[ctx.plan].name} plan{tenant.city ? ` · ${tenant.city}` : ''}</span></div>}
         </div>
         <SideNav groups={nav} admin={isPlatformAdmin(user)} />
         <div className="side-foot">Signed in as<br /><span style={{ color: '#fff' }}>{user.email}</span><br />{user.role}</div>

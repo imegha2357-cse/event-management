@@ -31,7 +31,7 @@ export const EVENT_TYPES = ['Wedding', 'Reception', 'Engagement', 'Valaikappu', 
 export const EXP_CATS = ['Food', 'Decor', 'Staff', 'Transport', 'Rental', 'Other'];
 export const PAY_KINDS = ['Advance', 'Installment', 'Final payment'];
 export const PAY_MODES = ['Cash', 'UPI', 'Bank transfer', 'Cheque', 'Card'];
-export const SWATCHES = ['#2266d6', '#6b4eff', '#c2410c', '#0f766e', '#be185d', '#a16207', '#15803d', '#7c2d12'];
+export const SWATCHES = ['#111111', '#2266d6', '#c2410c', '#0f766e', '#be185d', '#a16207', '#15803d', '#7c2d12'];
 export const DOC_STYLES: Record<string, [string, string]> = { classic: ['Classic', 'Clean, with a colour line'], modern: ['Modern colour band', 'Bold header in your colour'], elegant: ['Elegant centred', 'Centred, classic serif titles'] };
 /** Statuses a booking can have. Bookings are always confirmed events: a quotation becomes a booking only when it is accepted. */
 export const BASE_STATUSES = ['Confirmed', 'Completed', 'Cancelled'];

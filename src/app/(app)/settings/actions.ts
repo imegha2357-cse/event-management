@@ -54,7 +54,7 @@ export async function addMemberAction(_: ActionState, fd: FormData): Promise<Act
   const [{ n }] = await ctx.db.select({ n: sql<number>`count(*)::int` }).from(schema.users).where(and(eq(schema.users.tenantId, ctx.tenant.id), eq(schema.users.active, true)));
   if (n >= lim) return { error: `Your plan allows ${lim} login${lim === 1 ? '' : 's'}. Ask for an upgrade in Settings → Plan.` };
   const [exists] = await ctx.db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, parsed.data.email)).limit(1);
-  if (exists) return { fieldErrors: { email: 'This email already has an EventDesk login.' } };
+  if (exists) return { fieldErrors: { email: 'This email already has an EventOS login.' } };
   await ctx.db.insert(schema.users).values({ id: newId(), tenantId: ctx.tenant.id, name: parsed.data.name, email: parsed.data.email, phone: parsed.data.phone, role: parsed.data.role, passwordHash: await bcrypt.hash(parsed.data.password, 12) });
   await logActivity(ctx, `Added ${parsed.data.name} as ${parsed.data.role}`);
   revalidatePath('/staff/team');

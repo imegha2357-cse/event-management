@@ -30,7 +30,7 @@ export default async function Admin() {
   const count = (p: string) => companies.filter(c => planKey(c.t.plan) === p).length;
   return (
     <>
-      <PageHead title="Admin panel" sub="Every event company on EventDesk. Set each one’s plan, suspend or reactivate, and handle upgrade requests." />
+      <PageHead title="Admin panel" sub="Every event company on EventOS. Set each one’s plan, suspend or reactivate, and handle upgrade requests." />
       <div className="body">
         <div className="grid4">
           <div className="kpi"><div className="k">Active companies</div><div className="v">{active.length}</div><div className="s">of {companies.length} signed up</div></div>
@@ -61,7 +61,7 @@ export default async function Admin() {
                 <td className="num">{users}</td><td className="num">{events}</td><td className="nowrap">{fmtDate(t.createdAt)}</td>
                 <td><Badge s={t.status === 'Active' ? 'good' : 'bad'} label={t.status} /></td>
                 <td className="num">{t.id !== ctx.tenant.id && <ActionButton action={setStatusAction} fields={{ tenantId: t.id, status: t.status === 'Active' ? 'Suspended' : 'Active' }}
-                  label={t.status === 'Active' ? 'Suspend' : 'Activate'} className={'btn sm' + (t.status === 'Active' ? ' danger' : '')} confirm={t.status === 'Active' ? `Suspend ${t.name}? Their team will not be able to use EventDesk until you activate them again. Their data is kept.` : undefined} />}</td>
+                  label={t.status === 'Active' ? 'Suspend' : 'Activate'} className={'btn sm' + (t.status === 'Active' ? ' danger' : '')} confirm={t.status === 'Active' ? `Suspend ${t.name}? Their team will not be able to use EventOS until you activate them again. Their data is kept.` : undefined} />}</td>
               </tr>))}
           </tbody></table></div>
         </div>

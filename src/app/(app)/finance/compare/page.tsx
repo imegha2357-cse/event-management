@@ -9,7 +9,7 @@ import { moneyByBooking } from '@/lib/money';
 import { EXP_CATS } from '@/lib/catalog';
 import { fmtDate, inr, todayIST } from '@/lib/util';
 export const metadata = { title: 'Compare events' };
-const CAT_COL: Record<string, string> = { Food: '#2266d6', Decor: '#6b4eff', Staff: '#0f766e', Transport: '#e2a23b', Rental: '#be185d', Other: '#8a92a3' };
+const CAT_COL: Record<string, string> = { Food: '#111111', Decor: '#a16207', Staff: '#0f766e', Transport: '#e2a23b', Rental: '#be185d', Other: '#8a92a3' };
 
 export default async function Compare({ searchParams }: { searchParams: Promise<{ ids?: string; add?: string }> }) {
   const sp = await searchParams;

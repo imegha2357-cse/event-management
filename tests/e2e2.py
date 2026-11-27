@@ -1,5 +1,5 @@
 import os
-"""End-to-end test for EventDesk v2 (plans, admin, invoices, finance, tools, team, customize).
+"""End-to-end test for EventOS v2 (plans, admin, invoices, finance, tools, team, customize).
 Needs: app on :3100 (production build, EVENTDESK_TEST=1), mock WhatsApp on :3999, local Postgres on :5433."""
 import base64, json, re, subprocess, sys, time, urllib.request
 from datetime import date, timedelta

@@ -161,7 +161,8 @@ CREATE INDEX IF NOT EXISTS notifications_tenant_idx ON notifications(tenant_id, 
 -- All statements are additive and safe to run again.
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'basic';
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'Active';
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS colour text NOT NULL DEFAULT '#2266d6';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS colour text NOT NULL DEFAULT '#111111';
+ALTER TABLE tenants ALTER COLUMN colour SET DEFAULT '#111111';
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS logo text NOT NULL DEFAULT '';
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS doc_style text NOT NULL DEFAULT 'classic';
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS terms text NOT NULL DEFAULT '';

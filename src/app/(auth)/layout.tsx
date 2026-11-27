@@ -1,11 +1,12 @@
 import { LegalLinks } from '@/components/legal-page';
+import { Wordmark } from '@/components/brand';
 import { legalReady } from '@/lib/legal';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="auth">
       <aside className="auth-side">
-        <div className="side-brand" style={{ border: 0, padding: 0 }}><div className="logo">ED</div><div><b>EventDesk</b><span>For event management companies</span></div></div>
+        <div className="auth-brand"><Wordmark height={26} /><span>For event management companies</span></div>
         <div>
           <h2>Quotations, bookings and crews in one place.</h2>
           <ul>

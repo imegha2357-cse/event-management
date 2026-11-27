@@ -1,5 +1,5 @@
 /**
- * Who runs EventDesk, for the Privacy Policy and Terms pages.
+ * Who runs EventOS, for the Privacy Policy and Terms pages.
  * The two pages (and the links to them) stay hidden until every field is filled in,
  * so a half-finished legal page is never shown.
  */

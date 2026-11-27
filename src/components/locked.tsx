@@ -16,7 +16,7 @@ export function Locked({ module, tenantPlan }: { module: string; tenantPlan: str
           <p>You are on the <b>{PLANS[tenantPlan as keyof typeof PLANS]?.name ?? 'Basic'}</b> plan. {m.label} comes with the <b>{p.name}</b> plan ({inr(p.price)} per month).</p>
           {m.pitch && <ul style={{ margin: 0, paddingLeft: 20, lineHeight: 1.8 }}>{m.pitch.map(x => <li key={x}>{x}</li>)}</ul>}
           <ActionButton action={requestUpgradeAction} fields={{ plan: m.plan }} label={`Request upgrade to ${p.name}`} pendingText="Sending…" className="btn primary" />
-          <p className="small muted">Your request goes to the EventDesk team, who switch your plan. Your data stays exactly as it is.</p>
+          <p className="small muted">Your request goes to the EventOS team, who switch your plan. Your data stays exactly as it is.</p>
         </div></div>
       </div>
     </>

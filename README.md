@@ -1,4 +1,4 @@
-# EventDesk
+# EventOS
 
 A multi-company web app for event management companies: customers, quotations, customer accept/decline,
 automatic bookings, WhatsApp booking confirmations, calendar, and staff crews with attendance and wages.
@@ -97,7 +97,8 @@ Customer numbers are stored as 10-digit Indian mobiles and sent as `91XXXXXXXXXX
 
 - Fill in `src/lib/legal.ts` (operator, address, email, courts, effective date). The Privacy Policy (`/privacy`) and Terms (`/terms`) pages, and the links to them on the sign-in, sign-up and customer quotation pages, stay hidden until every field is filled.
 - Connect the custom domain to the Cloudflare Worker, then set `AUTH_URL` in `wrangler.jsonc` and the Google redirect URI to it.
-- House style: no em or en dashes, no emoji, no gradients or pill-shaped controls, no decorative animation. `tests/style_audit.py` checks every page for these.
+- Brand: EventOS, black and white. Logo files are in `src/components/brand.tsx` (traced from the supplied artwork) and `src/app/icon.svg`, `favicon.ico`, `apple-icon.png`. A company's colour (Settings) is used only on its quotations and invoices; Enterprise white-labelling (Customize) can still recolour the app.
+- House style: no purple, no em or en dashes, no emoji, no gradients or pill-shaped controls, no decorative animation. `tests/style_audit.py` checks every page for these.
 
 ## Tests
 

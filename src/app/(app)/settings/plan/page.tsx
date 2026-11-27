@@ -33,7 +33,7 @@ export default async function PlanPage() {
         </div>
         {plan !== 'enterprise' && (
           <div className="panel"><div className="panel-h"><h2>Upgrade</h2></div><div className="panel-b" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            {pending ? <div className="notice">Your request for <b>{PLANS[pending.plan as PlanKey]?.name}</b> is with the EventDesk team. Your plan will change as soon as they approve it.</div>
+            {pending ? <div className="notice">Your request for <b>{PLANS[pending.plan as PlanKey]?.name}</b> is with the EventOS team. Your plan will change as soon as they approve it.</div>
               : (['pro', 'enterprise'] as PlanKey[]).filter(p => RANK[p] > RANK[plan]).map(p => (
                 <ActionButton key={p} action={requestUpgradeAction} fields={{ plan: p }} label={`Request ${PLANS[p].name} (${inr(PLANS[p].price)}/month)`} pendingText="Sending…" className="btn primary" />))}
           </div></div>)}

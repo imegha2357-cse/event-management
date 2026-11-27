@@ -22,7 +22,7 @@ export const tenants = pgTable('tenants', {
   gstin: text('gstin').notNull().default(''),
   plan: text('plan').notNull().default('basic'),
   status: text('status').notNull().default('Active'),
-  colour: text('colour').notNull().default('#2266d6'),
+  colour: text('colour').notNull().default('#111111'),
   logo: text('logo').notNull().default(''),
   docStyle: text('doc_style').notNull().default('classic'),
   terms: text('terms').notNull().default(''),

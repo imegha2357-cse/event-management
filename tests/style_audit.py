@@ -12,15 +12,17 @@ bid = sql(f"select id from bookings where tenant_id='{tid}' limit 1"); iid = sql
 cid = sql(f"select id from customers where tenant_id='{tid}' limit 1")
 sql(f"update tenants set plan='enterprise' where id='{tid}'")  # every page unlocked
 EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿⭐✅❌✔✖✓✗]")
-AUDIT_JS = """() => {
-  const bad = { radius: [], gradient: [], anim: [] };
+AUDIT_JS = r"""() => {
+  const bad = { radius: [], gradient: [], anim: [], purple: [] };
+  const hue = c => { const m = c.match(/rgba?\((\d+), (\d+), (\d+)/); if (!m) return null; let [r, g, b] = m.slice(1, 4).map(x => x / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if (d < 0.15) return null; let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return (h * 60 + 360) % 360; };
   for (const el of document.querySelectorAll('body *')) {
     const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') continue;
     const r = parseFloat(cs.borderTopLeftRadius), h = el.getBoundingClientRect().height, w = el.getBoundingClientRect().width;
     const cls = (el.className && el.className.baseVal === undefined ? el.className : '') + '';
-    const round = /avatar|spinner|nd\\b|logo/.test(cls) || el.tagName === 'INPUT' && ['radio','checkbox'].includes(el.type);
+    const round = /avatar|spinner|nd\b|logo/.test(cls) || el.tagName === 'INPUT' && ['radio','checkbox'].includes(el.type);
     if (!round && h > 0 && r >= 8 && r >= h / 2 - 1 && w > h * 1.3) bad.radius.push(el.tagName + '.' + cls + ' r=' + r + ' h=' + Math.round(h));
     if (cs.backgroundImage.includes('gradient')) bad.gradient.push(el.tagName + '.' + cls);
+    for (const c of [cs.color, cs.backgroundColor, cs.borderTopColor]) { const h = hue(c); if (h !== null && h >= 245 && h <= 330) { bad.purple.push(el.tagName + '.' + cls + ' ' + c); break; } }
     if (cs.animationName !== 'none' && !/spinner/.test(cls)) bad.anim.push(el.tagName + '.' + cls + ' ' + cs.animationName);
   }
   return bad;
@@ -54,5 +56,5 @@ with sync_playwright() as p:
     anon.goto(B + f"/q/{token}"); check("customer quotation page links Privacy Policy", anon.locator("a[href='/privacy']").count() == 1)
     for u in ["/privacy", "/terms"]:
         anon.goto(B + u); t = anon.inner_text("body")
-        check(f"{u} public, with operator, contact and date", "Test Operator Private Limited" in t and "privacy@example.com" in t and "Effective from 1 Dec 2026" in t, t[:200])
+        check(f"{u} public, with operator, contact and date", "EventOS" in t and "Test Operator Private Limited" in t and "privacy@example.com" in t and "Effective from 1 Dec 2026" in t, t[:200])
 print(f"{sum(res)}/{len(res)} passed")

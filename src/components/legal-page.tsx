@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { LEGAL } from '@/lib/legal';
+import { Wordmark } from './brand';
 import { fmtDate } from '@/lib/util';
 
 /** Shared layout for the Privacy Policy and Terms pages. */
@@ -7,7 +8,7 @@ export function LegalPage({ title, children }: { title: string; children: React.
   return (
     <div className="legal">
       <header className="legal-top">
-        <Link href="/login" className="legal-brand"><span className="logo">ED</span><b>EventDesk</b></Link>
+        <Link href="/login" className="legal-brand" aria-label="EventOS"><Wordmark height={20} /></Link>
         <nav><Link href="/privacy">Privacy Policy</Link><Link href="/terms">Terms and Conditions</Link><Link href="/login">Sign in</Link></nav>
       </header>
       <article className="legal-body">

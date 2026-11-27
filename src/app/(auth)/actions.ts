@@ -80,9 +80,9 @@ export async function forgotPasswordAction(_: ActionState, fd: FormData): Promis
     const link = `${await siteOrigin()}/reset-password?token=${token}`;
     if (emailConfigured()) {
       try {
-        await sendEmail(u.email, 'Reset your EventDesk password',
+        await sendEmail(u.email, 'Reset your EventOS password',
           `<p>Hello ${u.name.replace(/[<>&]/g, '')},</p><p>Use the link below to choose a new password. It works once and expires in 1 hour.</p><p><a href="${link}">Reset my password</a></p><p>If you did not ask for this, you can ignore this email.</p>`,
-          `Hello ${u.name},\n\nReset your EventDesk password: ${link}\n\nThe link works once and expires in 1 hour. If you did not ask for this, ignore this email.`);
+          `Hello ${u.name},\n\nReset your EventOS password: ${link}\n\nThe link works once and expires in 1 hour. If you did not ask for this, ignore this email.`);
       } catch (e) {
         console.error('[auth] reset email failed:', e);
         return { error: 'We could not send the email right now. Please try again in a few minutes.' };

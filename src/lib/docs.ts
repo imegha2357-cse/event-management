@@ -15,7 +15,7 @@ export function docCfg(t: Tenant) {
     ...merged,
     style: perk(t, 'docDesigns') ? t.docStyle || 'classic' : 'classic',
     terms: (perk(t, 'docDesigns') && t.terms) || '',
-    colour: (isEnt(t) && t.custom?.colour) || t.colour || '#2266d6',
+    colour: (isEnt(t) && t.custom?.colour) || t.colour || '#111111',
   };
 }
 export const defaultTerms = (kind: 'quote' | 'invoice') =>
